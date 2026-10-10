@@ -8,6 +8,7 @@ import {
   ALWAYS_SHOW_CAPTIONS,
   CALL_VIDEO_SRC,
   FILLERS,
+  LAG_AFTER_SCRIPT,
   LAG_SEGMENT,
   LISTENING_LOOP,
   MUTED_SEGMENT,
@@ -23,6 +24,9 @@ type Token = { aborted: boolean };
 type ListenResult = "answered" | "timeout" | "muted" | "aborted";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Raw mic signal: the browser's auto-gain / noise filter make speech and silence look alike. */
+const AUDIO_CONSTRAINTS = { echoCancellation: true, noiseSuppression: false, autoGainControl: false };
 
 function cameraErrorText(err: unknown) {
   const name = err instanceof DOMException ? err.name : "";
@@ -53,6 +57,8 @@ export default function ZoomCall() {
   const [camOn, setCamOn] = useState(false);
   const [camError, setCamError] = useState<string | null>(null);
   const [debug, setDebug] = useState(false);
+  const [mics, setMics] = useState<{ id: string; label: string }[]>([]);
+  const [micId, setMicId] = useState("");
   const selfVideoRef = useRef<HTMLVideoElement>(null);
   const camStreamRef = useRef<MediaStream | null>(null);
 
@@ -252,6 +258,12 @@ export default function ZoomCall() {
         if (token.aborted) return;
         if (seg.waitForAnswer && (await waitForAnswer()) === "aborted") return;
       }
+      // Script done → the lag kicks in right after the last answer (no awkward waiting).
+      if (LAG_AFTER_SCRIPT) {
+        await sleep(400);
+        if (!token.aborted) setPhase("lag");
+        return;
+      }
       let k = 0;
       while (!token.aborted) {
         const r = await waitForAnswer();
@@ -445,6 +457,57 @@ export default function ZoomCall() {
     [],
   );
 
+  /* ---------- camera + mic setup (starts as soon as the join dialog shows, like Zoom's preview) ---------- */
+  const listMics = useCallback(async (activeStream?: MediaStream | null) => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const inputs = devices
+        .filter((d) => d.kind === "audioinput")
+        .map((d, i) => ({ id: d.deviceId, label: d.label || `Microphone ${i + 1}` }));
+      setMics(inputs);
+      const current = activeStream?.getAudioTracks()[0]?.getSettings().deviceId;
+      if (current) setMicId(current);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const mediaStarted = useRef(false);
+  const setupMedia = useCallback(async () => {
+    if (mediaStarted.current) return;
+    mediaStarted.current = true;
+    let stream: MediaStream | null = null;
+    try {
+      // One permission prompt for camera + mic, like real Zoom.
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: AUDIO_CONSTRAINTS,
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" },
+      });
+    } catch (err) {
+      // camera failed (blocked / in use) → still try the mic on its own
+      setCamError(cameraErrorText(err));
+    }
+    if (stream) attachCamera(stream);
+    await mic.start(stream);
+    void listMics(stream);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attachCamera, listMics, mic.start]);
+
+  useEffect(() => {
+    void setupMedia();
+  }, [setupMedia]);
+
+  const switchMic = async (id: string) => {
+    setMicId(id);
+    mic.stop();
+    try {
+      const s2 = await navigator.mediaDevices.getUserMedia({ audio: { ...AUDIO_CONSTRAINTS, deviceId: { exact: id } } });
+      await mic.start(s2);
+    } catch {
+      await mic.start();
+    }
+  };
+
   const joinAudio = async () => {
     unlockAudio();
     // prime the video element inside the click so the browser allows sound later
@@ -462,19 +525,7 @@ export default function ZoomCall() {
       window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
     }
     setPhase("connecting");
-    // One permission prompt for camera + mic, like real Zoom.
-    let stream: MediaStream | null = null;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false },
-        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" },
-      });
-    } catch (err) {
-      // camera failed (blocked / in use) → still try the mic on its own
-      setCamError(cameraErrorText(err));
-    }
-    if (stream) attachCamera(stream);
-    await mic.start(stream);
+    await setupMedia();
     setTimeout(() => setPhase("live"), 1400);
   };
 
@@ -681,6 +732,27 @@ export default function ZoomCall() {
               <span className={styles.audioTabActive}>Computer Audio</span>
               <span>Phone Call</span>
             </div>
+            <div className={styles.micTest}>
+              <label className={styles.micLabel}>
+                Microphone
+                <select value={micId} onChange={(e) => void switchMic(e.target.value)} disabled={!mics.length}>
+                  {!mics.length && <option value="">{mic.status === "denied" ? "No microphone access" : "Waiting for permission…"}</option>}
+                  {mics.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <MicMeter mic={mic} />
+              <span className={styles.micHint}>
+                {mic.status === "denied"
+                  ? "Allow microphone access in the address bar, then reload."
+                  : mic.speaking
+                    ? "We can hear you!"
+                    : "Say something: the bar should turn green."}
+              </span>
+            </div>
             <button className={styles.audioJoin} onClick={joinAudio}>
               Join with Computer Audio
             </button>
@@ -713,6 +785,29 @@ export default function ZoomCall() {
 }
 
 /* ================================================================== */
+/** Input-level bar used in the join dialog (like Zoom's "Test Microphone"). */
+function MicMeter({ mic }: { mic: { levelRef: RefObject<number>; thresholdRef: RefObject<number>; speaking: boolean } }) {
+  const barRef = useRef<HTMLDivElement>(null);
+  const lineRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    let raf = 0;
+    const scale = (v: number) => `${Math.min(100, Math.sqrt(v / 0.15) * 100)}%`;
+    const loop = () => {
+      if (barRef.current) barRef.current.style.width = scale(mic.levelRef.current ?? 0);
+      if (lineRef.current) lineRef.current.style.left = scale(mic.thresholdRef.current ?? 0);
+      raf = requestAnimationFrame(loop);
+    };
+    loop();
+    return () => cancelAnimationFrame(raf);
+  }, [mic]);
+  return (
+    <div className={styles.meter}>
+      <div ref={barRef} className={styles.meterBar} style={{ background: mic.speaking ? "#23d959" : "#b5b5b5" }} />
+      <div ref={lineRef} className={styles.meterLine} />
+    </div>
+  );
+}
+
 /** Press D during the call: live mic level vs. the speech / silence lines. */
 function MicDebug({
   mic,
