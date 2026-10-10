@@ -6,7 +6,7 @@ import { ASSETS, Img } from "./shared";
 
 const pixel = VT323({ weight: "400", subsets: ["latin"] });
 
-const VIDEO_URL = "https://www.youtube.com/";
+const VIDEO_URL = "/youtube";
 
 const BANNER_TEXT = "IF U SKIP MY PROFILE SONG UR CHOPPED!!!";
 const SONG = 'DJ Unc & The Sigma Boys - "John Pork (Hallway Remix)" [128kbps]';
