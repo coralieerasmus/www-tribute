@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ASSETS, Img } from "./shared";
+import { ASSETS, Img, type GoTo } from "./shared";
 
 const SIZES = ["Small", "Medium", "Large"];
 const CRUSTS = ["Thin", "Regular"];
@@ -17,8 +17,9 @@ function formatPhone(value: string) {
   return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
 
-/* 1994: Pizza Hut's PizzaNet */
-export default function PizzaHut() {
+/* 1994: Pizza Hut's PizzaNet.
+   Delivery form → Pizza Menu popup → Thank You popup → "New Message" notification */
+export default function PizzaHut({ goTo }: { goTo: GoTo }) {
   // delivery details
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
@@ -31,6 +32,11 @@ export default function PizzaHut() {
   const [error, setError] = useState("");
 
   const [popup, setPopup] = useState<Popup>("none");
+
+  // notification: shows after an order is placed and the popup is closed
+  const [ordered, setOrdered] = useState(false);
+  const [notificationClosed, setNotificationClosed] = useState(false);
+  const showNotification = ordered && popup === "none" && !notificationClosed;
 
   function toggleTopping(topping: string) {
     setToppings((current) =>
@@ -156,11 +162,12 @@ export default function PizzaHut() {
                     return;
                   }
                   setError("");
+                  setOrdered(true);
                   setPopup("thanks");
                 }}
               >
                 <h2 id="p-popup-title">Pizza Menu</h2>
-                <p>Hello {name}! Please select your pizza:</p>
+                <p>Hello {name || "Guest"}! Please select your pizza:</p>
 
                 <hr />
 
@@ -306,6 +313,41 @@ export default function PizzaHut() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Step 4: "New Message" notification. Clicking it opens MySpace */}
+      {showNotification && (
+        <div className="n-toast" role="status">
+          <div className="n-head">
+            <Img className="n-chat" src={ASSETS.chatIcon} alt="" />
+            <span className="n-title">New Message</span>
+            <button
+              className="n-x"
+              type="button"
+              aria-label="Close notification"
+              onClick={() => setNotificationClosed(true)}
+            >
+              X
+            </button>
+          </div>
+
+          <button
+            className="n-body"
+            type="button"
+            onClick={() => goTo("myspace")}
+          >
+            <Img className="n-photo" src={ASSETS.profilePic} alt="" />
+            <span className="n-text">
+              <span className="n-line">
+                <Img className="n-envelope" src={ASSETS.envelope} alt="" />
+                <span>
+                  <b>@Stansino_Oers67</b> updated his status.
+                </span>
+              </span>
+              <span className="n-cta">Go check it out!</span>
+            </span>
+          </button>
         </div>
       )}
     </main>
