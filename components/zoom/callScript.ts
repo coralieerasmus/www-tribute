@@ -40,7 +40,7 @@ export const SEGMENTS: Segment[] = [
   { id: "hello", start: 0, end: 4, waitForAnswer: true, text: "Oh hey! You actually picked up. Can you hear me?" },
   { id: "how", start: 4, end: 9, waitForAnswer: true, text: "Okay good. Sorry for calling out of nowhere. How are you doing?" },
   { id: "what", start: 9, end: 13, waitForAnswer: true, text: "Nice, nice. So what are you up to right now?" },
-  { id: "youtube", start: 13, end: 18, waitForAnswer: true, text: "Wait, are you still watching old YouTube videos? What's your favourite one?" },
+  { id: "stan", start: 13, end: 18, waitForAnswer: true, text: "Oh wait, did you see that new YouTube video Stan put on his status?" },
   { id: "laptop", start: 18, end: 23, waitForAnswer: true, text: "Okay, random question. What laptop are you on right now?" },
   { id: "old", start: 23, end: 27, waitForAnswer: true, text: "Hmm. Is it, like... old?" },
 ];

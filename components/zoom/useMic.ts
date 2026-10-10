@@ -6,32 +6,41 @@ import { getAudioContext } from "@/lib/sounds";
 /**
  * Microphone voice detector.
  *
+ * - Auto gain control and noise suppression are OFF: the browser's AGC boosts
+ *   room noise during silence and squashes your voice while talking, which
+ *   made speech and silence look almost the same. We use the raw signal.
  * - The mic signal is band-passed to the human-voice range (fans, hum and
  *   hiss are mostly ignored).
- * - The background-noise level is tracked continuously, so the detector keeps
- *   adapting to the room instead of calibrating once.
- * - Two thresholds (hysteresis): `thresholdRef` = "this is speech",
- *   `silenceRef` = "this is quiet again". That makes the end of an answer
- *   detectable quickly instead of waiting for background noise to drop.
+ * - "Room noise" = the quietest moments of the last few seconds (a low
+ *   percentile), so it can't creep up while you're talking.
+ * - "Speech" = clearly louder than the room (about +9 dB), "silence" = back
+ *   near the room level (about +4 dB). Works for quiet and loud mics alike.
  *
- * Refs are read every frame without re-rendering; `speaking` is React state for UI.
+ * `start(stream?)` can reuse a stream that already has an audio track
+ * (e.g. one getUserMedia call for camera + mic, like real Zoom).
  */
 export function useMic() {
   const levelRef = useRef(0);
-  const thresholdRef = useRef(0.03);
-  const silenceRef = useRef(0.018);
+  const floorRef = useRef(0.002);
+  const thresholdRef = useRef(0.006);
+  const silenceRef = useRef(0.0035);
   const streamRef = useRef<MediaStream | null>(null);
   const [status, setStatus] = useState<"idle" | "requesting" | "on" | "denied">("idle");
   const [speaking, setSpeaking] = useState(false);
   const stopRef = useRef<(() => void) | null>(null);
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (existing?: MediaStream | null) => {
     if (streamRef.current) return true;
     setStatus("requesting");
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false },
-      });
+      let stream: MediaStream;
+      if (existing && existing.getAudioTracks().length) {
+        stream = new MediaStream(existing.getAudioTracks());
+      } else {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false },
+        });
+      }
       streamRef.current = stream;
       const ctx = getAudioContext();
       if (!ctx) throw new Error("no audio context");
@@ -40,16 +49,22 @@ export function useMic() {
       const source = ctx.createMediaStreamSource(stream);
       const highpass = ctx.createBiquadFilter();
       highpass.type = "highpass";
-      highpass.frequency.value = 120;
+      highpass.frequency.value = 100;
       const lowpass = ctx.createBiquadFilter();
       lowpass.type = "lowpass";
-      lowpass.frequency.value = 3800;
+      lowpass.frequency.value = 4000;
       const analyser = ctx.createAnalyser();
-      analyser.fftSize = 512; // ~10ms windows at 48kHz: fast reaction
+      analyser.fftSize = 512; // ~10ms windows: fast reaction
       source.connect(highpass).connect(lowpass).connect(analyser);
       const buf = new Float32Array(analyser.fftSize);
 
-      let floor = 0.008;
+      // ring buffer of recent levels (20ms each → 5 seconds)
+      const HISTORY = 250;
+      const history = new Float32Array(HISTORY).fill(0);
+      let hIndex = 0;
+      let hCount = 0;
+      const sorted = new Float32Array(HISTORY);
+      let tick = 0;
       let speakingNow = false;
       let lastLoud = 0;
 
@@ -59,21 +74,27 @@ export function useMic() {
         for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
         const rms = Math.sqrt(sum / buf.length);
 
-        // fast attack, quicker release than before so silence is seen sooner
+        // fast attack, fast release
         const prev = levelRef.current;
-        levelRef.current = rms > prev ? prev * 0.3 + rms * 0.7 : prev * 0.55 + rms * 0.45;
+        levelRef.current = rms > prev ? prev * 0.3 + rms * 0.7 : prev * 0.5 + rms * 0.5;
 
-        // noise floor: drops quickly, rises very slowly (so speech doesn't raise it)
-        if (rms < floor) floor = floor * 0.85 + rms * 0.15;
-        else floor = floor * 0.9985 + rms * 0.0015;
-        floor = Math.max(0.0015, floor);
+        history[hIndex] = rms;
+        hIndex = (hIndex + 1) % HISTORY;
+        hCount = Math.min(HISTORY, hCount + 1);
 
-        thresholdRef.current = Math.min(0.1, Math.max(0.012, floor * 2.8 + 0.006));
-        silenceRef.current = Math.min(0.06, Math.max(0.007, floor * 1.7 + 0.003));
+        // re-estimate the room level every 100ms: 15th percentile of recent levels
+        if (tick++ % 5 === 0 && hCount > 10) {
+          sorted.set(history);
+          const view = sorted.subarray(0, hCount).sort();
+          const floor = Math.max(0.0002, view[Math.floor(hCount * 0.15)]);
+          floorRef.current = floor;
+          thresholdRef.current = Math.max(0.0015, floor * 2.8); // ≈ +9 dB above the room
+          silenceRef.current = Math.max(0.001, floor * 1.6); //  ≈ +4 dB above the room
+        }
 
         const now = performance.now();
         if (levelRef.current > thresholdRef.current) lastLoud = now;
-        const next = now - lastLoud < 200;
+        const next = now - lastLoud < 250;
         if (next !== speakingNow) {
           speakingNow = next;
           setSpeaking(next);
@@ -103,5 +124,5 @@ export function useMic() {
 
   useEffect(() => () => stopRef.current?.(), []);
 
-  return { start, stop, status, speaking, levelRef, thresholdRef, silenceRef };
+  return { start, stop, status, speaking, levelRef, floorRef, thresholdRef, silenceRef };
 }

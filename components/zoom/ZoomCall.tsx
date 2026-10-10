@@ -24,6 +24,15 @@ type ListenResult = "answered" | "timeout" | "muted" | "aborted";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+function cameraErrorText(err: unknown) {
+  const name = err instanceof DOMException ? err.name : "";
+  if (name === "NotAllowedError") return "Camera blocked. Allow camera access in the address bar.";
+  if (name === "NotReadableError") return "Camera is being used by another app (Teams, Zoom, OBS…). Close it and click Start Video.";
+  if (name === "NotFoundError" || name === "OverconstrainedError") return "No camera found.";
+  return "Can't start camera.";
+}
+
+
 export default function ZoomCall() {
   const router = useRouter();
   const mic = useMic();
@@ -39,6 +48,13 @@ export default function ZoomCall() {
   const [lagSpinner, setLagSpinner] = useState(false);
   const [chat, setChat] = useState<{ from: string; text: string }[]>([]);
   const [chatText, setChatText] = useState("");
+
+  const [camStream, setCamStream] = useState<MediaStream | null>(null);
+  const [camOn, setCamOn] = useState(false);
+  const [camError, setCamError] = useState<string | null>(null);
+  const [debug, setDebug] = useState(false);
+  const selfVideoRef = useRef<HTMLVideoElement>(null);
+  const camStreamRef = useRef<MediaStream | null>(null);
 
   const rootRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -184,23 +200,28 @@ export default function ZoomCall() {
           if (manualAnswerRef.current) return finish("answered");
 
           const micOn = micStatusRef.current === "on";
-          const loud = micOn && !mutedRef.current && mic.levelRef.current > mic.thresholdRef.current;
+          const level = mic.levelRef.current;
+          const active = micOn && !mutedRef.current;
+          // start of speech needs the (higher) speech threshold…
+          const loud = active && level > mic.thresholdRef.current;
+          // …but once they're talking, anything above the (lower) silence level still counts
+          const stillTalking = active && started && level > mic.silenceRef.current;
           if (loud) {
             voiced += dt;
-            lastVoice = now;
             if (voiced >= VAD.minSpeechMs) started = true;
           } else {
-            voiced = Math.max(0, voiced - dt * 0.4);
+            voiced = Math.max(0, voiced - dt * 0.5);
           }
+          if (loud || stillTalking) lastVoice = now;
 
           if (started && now - lastVoice > VAD.endSilenceMs) return finish("answered");
           if (!started && allowMutedNudge && micOn && mutedRef.current && now - begin > 5000) return finish("muted");
           const timeout = micOn ? VAD.noAnswerTimeoutMs : VAD.noMicTimeoutMs;
           if (!started && now - begin > timeout) return finish("timeout");
-        }, 40);
+        }, 20);
       });
     },
-    [mic.levelRef, mic.thresholdRef],
+    [mic.levelRef, mic.thresholdRef, mic.silenceRef],
   );
 
   /* ================================================================ */
@@ -345,6 +366,9 @@ export default function ZoomCall() {
   useEffect(() => {
     if (phase !== "ended") return;
     mic.stop();
+    camStreamRef.current?.getTracks().forEach((t) => t.stop());
+    camStreamRef.current = null;
+    setCamOn(false);
     videoRef.current?.pause();
     window.speechSynthesis?.cancel();
     const t = setTimeout(() => router.push(ROUTES.google), TIMINGS.callEndedMs);
@@ -361,10 +385,65 @@ export default function ZoomCall() {
         e.preventDefault();
         manualAnswerRef.current = true;
       }
+      // press D to see the mic meter (for tuning)
+      if (e.key === "d" || e.key === "D") setDebug((d) => !d);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  /* ---------- webcam ---------- */
+  const attachCamera = useCallback((stream: MediaStream) => {
+    const tracks = stream.getVideoTracks();
+    if (!tracks.length) return false;
+    const camOnly = new MediaStream(tracks);
+    camStreamRef.current = camOnly;
+    setCamStream(camOnly);
+    setCamOn(true);
+    setCamError(null);
+    return true;
+  }, []);
+
+  const startCamera = useCallback(async () => {
+    if (camStreamRef.current) {
+      camStreamRef.current.getVideoTracks().forEach((t) => (t.enabled = true));
+      setCamOn(true);
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" },
+        audio: false,
+      });
+      attachCamera(stream);
+    } catch (err) {
+      setCamOn(false);
+      setCamError(cameraErrorText(err));
+    }
+  }, [attachCamera]);
+
+  const stopCamera = useCallback(() => {
+    camStreamRef.current?.getVideoTracks().forEach((t) => (t.enabled = false));
+    setCamOn(false);
+  }, []);
+
+  // attach the stream to the self-view whenever both exist
+  useEffect(() => {
+    const el = selfVideoRef.current;
+    if (el && camStream && el.srcObject !== camStream) {
+      el.srcObject = camStream;
+      void el.play().catch(() => {});
+    }
+  }, [camStream, camOn]);
+
+  // release the camera when leaving the page
+  useEffect(
+    () => () => {
+      camStreamRef.current?.getTracks().forEach((t) => t.stop());
+      camStreamRef.current = null;
+    },
+    [],
+  );
 
   const joinAudio = async () => {
     unlockAudio();
@@ -383,7 +462,19 @@ export default function ZoomCall() {
       window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
     }
     setPhase("connecting");
-    await mic.start();
+    // One permission prompt for camera + mic, like real Zoom.
+    let stream: MediaStream | null = null;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false },
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" },
+      });
+    } catch (err) {
+      // camera failed (blocked / in use) → still try the mic on its own
+      setCamError(cameraErrorText(err));
+    }
+    if (stream) attachCamera(stream);
+    await mic.start(stream);
     setTimeout(() => setPhase("live"), 1400);
   };
 
@@ -457,7 +548,18 @@ export default function ZoomCall() {
           </div>
 
           <div className={`${styles.tile} ${styles.selfTile} ${userTalking ? styles.tileActive : ""}`}>
-            <div className={styles.selfName}>You</div>
+            {camStream && (
+              <video
+                ref={selfVideoRef}
+                className={styles.selfVideo}
+                autoPlay
+                muted
+                playsInline
+                style={{ opacity: camOn ? 1 : 0 }}
+              />
+            )}
+            {!camOn && <div className={styles.selfName}>You</div>}
+            {!camOn && camError && phase !== "audio" && <div className={styles.camError}>{camError}</div>}
             <span className={styles.label}>
               {muted && <MicOffSmall />}
               {USER_LABEL}
@@ -531,8 +633,8 @@ export default function ZoomCall() {
           <ToolButton label={muted ? "Unmute" : "Mute"} onClick={() => setMuted((m) => !m)}>
             {muted ? <MicOffIcon /> : <MicLevelIcon levelRef={mic.levelRef} active={mic.status === "on"} />}
           </ToolButton>
-          <ToolButton label="Stop Video" onClick={() => flashToast("Your camera is being used by another application.")}>
-            <CamIcon />
+          <ToolButton label={camOn ? "Stop Video" : "Start Video"} onClick={() => (camOn ? stopCamera() : void startCamera())}>
+            {camOn ? <CamIcon /> : <CamOffIcon />}
           </ToolButton>
         </div>
         <div className={styles.tbGroup}>
@@ -601,6 +703,8 @@ export default function ZoomCall() {
         </div>
       )}
 
+      {debug && <MicDebug mic={mic} />}
+
       {mic.status === "denied" && phase === "live" && (
         <div className={styles.micWarning}>Zoom can&apos;t hear you. Allow microphone access so {CALLER.name} can hear you.</div>
       )}
@@ -609,6 +713,49 @@ export default function ZoomCall() {
 }
 
 /* ================================================================== */
+/** Press D during the call: live mic level vs. the speech / silence lines. */
+function MicDebug({
+  mic,
+}: {
+  mic: {
+    levelRef: RefObject<number>;
+    floorRef: RefObject<number>;
+    thresholdRef: RefObject<number>;
+    silenceRef: RefObject<number>;
+    speaking: boolean;
+  };
+}) {
+  const barRef = useRef<HTMLDivElement>(null);
+  const thrRef = useRef<HTMLDivElement>(null);
+  const silRef = useRef<HTMLDivElement>(null);
+  const txtRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    let raf = 0;
+    const scale = (v: number) => `${Math.min(100, Math.sqrt(v / 0.3) * 100)}%`;
+    const loop = () => {
+      const l = mic.levelRef.current ?? 0;
+      if (barRef.current) barRef.current.style.width = scale(l);
+      if (thrRef.current) thrRef.current.style.left = scale(mic.thresholdRef.current ?? 0);
+      if (silRef.current) silRef.current.style.left = scale(mic.silenceRef.current ?? 0);
+      if (txtRef.current)
+        txtRef.current.textContent = `level ${l.toFixed(4)} · room ${(mic.floorRef.current ?? 0).toFixed(4)} · speech > ${(mic.thresholdRef.current ?? 0).toFixed(4)}`;
+      raf = requestAnimationFrame(loop);
+    };
+    loop();
+    return () => cancelAnimationFrame(raf);
+  }, [mic]);
+  return (
+    <div className={styles.debug}>
+      <div className={styles.debugTrack}>
+        <div ref={barRef} className={styles.debugBar} style={{ background: mic.speaking ? "#23d959" : "#888" }} />
+        <div ref={silRef} className={styles.debugLine} style={{ background: "#f5a623" }} />
+        <div ref={thrRef} className={styles.debugLine} style={{ background: "#23d959" }} />
+      </div>
+      <div ref={txtRef} className={styles.debugText} />
+    </div>
+  );
+}
+
 function ToolButton({
   label,
   children,
@@ -677,6 +824,15 @@ function CamIcon() {
     <svg width="28" height="26" viewBox="0 0 26 24">
       <rect x="2" y="6" width="15" height="12" rx="2.5" fill="#fff" />
       <path d="M18 10l6-3.5v11L18 14z" fill="#fff" />
+    </svg>
+  );
+}
+function CamOffIcon() {
+  return (
+    <svg width="28" height="26" viewBox="0 0 26 24">
+      <rect x="2" y="6" width="15" height="12" rx="2.5" fill="#fff" />
+      <path d="M18 10l6-3.5v11L18 14z" fill="#fff" />
+      <path d="M3 3l20 18" stroke="#e02828" strokeWidth="2.2" />
     </svg>
   );
 }
