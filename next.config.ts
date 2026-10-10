@@ -9,7 +9,9 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   turbopack: {
     rules: {
-      "*.css": {
+      // Only run Tailwind on the global stylesheet, so *.module.css files
+      // (used by the youtube/call/google/apple pages) stay CSS modules.
+      "globals.css": {
         loaders: ["@tailwindcss/turbopack"],
         as: "*.css",
       },
@@ -17,4 +19,5 @@ const nextConfig: NextConfig = {
   },
 };
 
+export default nextConfig;
 export default nextConfig;
