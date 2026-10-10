@@ -9,7 +9,15 @@ const TOPPINGS = ["Pepperoni", "Kale", "Mushrooms", "Extra cheese"];
 
 type Popup = "none" | "menu" | "thanks";
 
-/* 1994: Pizza Hut's PizzaNet*/
+/* Only allow numbers, and add the dashes automatically: 123-456-7890 */
+function formatPhone(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 10);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+/* 1994: Pizza Hut's PizzaNet */
 export default function PizzaHut() {
   // delivery details
   const [name, setName] = useState("");
@@ -103,8 +111,10 @@ export default function PizzaHut() {
             id="p-phone"
             className="p-input p-input-short"
             type="tel"
+            inputMode="numeric"
+            placeholder="123-456-7890"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => setPhone(formatPhone(e.target.value))}
             required
           />
           <span className="p-note">(where we can reach you)</span>
@@ -128,6 +138,15 @@ export default function PizzaHut() {
             aria-modal="true"
             aria-labelledby="p-popup-title"
           >
+            <button
+              className="p-close"
+              type="button"
+              aria-label="Close"
+              onClick={() => setPopup("none")}
+            >
+              ×
+            </button>
+
             {popup === "menu" ? (
               <form
                 onSubmit={(e) => {
