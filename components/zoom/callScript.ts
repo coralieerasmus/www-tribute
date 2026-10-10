@@ -35,6 +35,13 @@ export const ALWAYS_SHOW_CAPTIONS = false;
 /** Optional muted "listening" loop inside the same video. */
 export const LISTENING_LOOP: { start: number; end: number } | null = null;
 
+/**
+ * true  = the lag starts right after the user answers the last question (natural flow).
+ * false = after the script, FILLERS keep the call going until TIMINGS.callBeforeGlitchMs.
+ * Either way the lag starts at TIMINGS.callBeforeGlitchMs at the latest.
+ */
+export const LAG_AFTER_SCRIPT = true;
+
 /** The scripted conversation, in order. Times are examples — replace them. */
 export const SEGMENTS: Segment[] = [
   { id: "hello", start: 0, end: 4, waitForAnswer: true, text: "Oh hey! You actually picked up. Can you hear me?" },
@@ -46,8 +53,8 @@ export const SEGMENTS: Segment[] = [
 ];
 
 /**
- * Short reactions played (in rotation) whenever the user answers after the
- * script has run out, so the call keeps feeling alive until the lag kicks in.
+ * Only used when LAG_AFTER_SCRIPT is false: short reactions played (in rotation)
+ * whenever the user answers after the script has run out.
  */
 export const FILLERS: Segment[] = [
   { id: "f1", start: 27, end: 29, text: "Haha, yeah." },
@@ -68,7 +75,7 @@ export const LAG_SEGMENT: Segment = {
   id: "lag",
   start: 36,
   end: 44,
-  text: "Damn... holy lag. You're freezing like crazy. You should really get a new laptop. Okay, I'm hanging up, bye!",
+  text: "Wait... you're freezing. Damn, holy lag! You should really get a new laptop. Oh sorry, I gotta go. Talk to you later!",
 };
 
 /** Voice-detection tuning. */
@@ -79,7 +86,7 @@ export const VAD = {
    *  Lower = snappier, but people pausing mid-sentence may get cut off. */
   endSilenceMs: 700,
   /** If they say nothing at all, move on after this long anyway. */
-  noAnswerTimeoutMs: 12_000,
+  noAnswerTimeoutMs: 7_000,
   /** Same, but when the mic is blocked/unavailable. */
   noMicTimeoutMs: 4_000,
   /** Small pause after the caller finishes before we start listening (avoids echo). */

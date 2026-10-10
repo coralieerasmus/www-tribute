@@ -17,10 +17,10 @@ export const TIMINGS = {
   youtubeBeforeCallMs: 60_000,
   /** How long the "haha u thought" text stays before the call opens. */
   declineJokeMs: 1_800,
-  /** How long into the call before everything starts lagging. */
+  /** Latest moment the lag starts (normally it starts right after the last question is answered). */
   callBeforeGlitchMs: 90_000,
   /** How long it lags before the "get a new laptop" clip interrupts. */
-  glitchLeadMs: 5_000,
+  glitchLeadMs: 2_500,
   /** Time the "meeting ended" message stays before going to Google. */
   callEndedMs: 3_000,
   /** How long the user is on the Apple page before the screen breaks. */
