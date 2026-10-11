@@ -22,17 +22,17 @@ export const ASSETS = {
   ],
 
   // MySpace + the "New Message" notification
-  zebra: "/assets/zebra.png",
+  zebra: "/assets/Zebra.png",
   profilePic: "/assets/Stansino.png",
   scorpion: "/assets/lobster.png",
   friends: ["/assets/lody.png", "/assets/chris.png", "/assets/pieter.png"],
   banners: "/assets/banners.png",
-  videoThumb: "/assets/VideoThumb.png",
+  videoThumb: "/assets/Youtube.png",
   chatIcon: "/assets/ChatIcon.png",
   envelope: "/assets/Envelope.png",
 };
 
-/* All screens of the website. Add new ones here. */
+/* All screens of the website*/
 export type Screen =
   | "instructions"
   | "google"

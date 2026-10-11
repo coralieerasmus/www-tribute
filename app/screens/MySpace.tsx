@@ -9,7 +9,7 @@ const pixel = VT323({ weight: "400", subsets: ["latin"] });
 /* Clicking the video opens YouTube page*/
 const VIDEO_URL = "/youtube";
 
-/* ▼ The profile song on Spotify link*/
+/* ▼ The profile song on Spotify*/
 const SPOTIFY_TRACK = "03UrZgTINDqvnUMbbIMhql";
 const SONG = 'DJ Unc & The Sigma Boys - "John Pork (Hallway Remix)" [128kbps]';
 
@@ -209,39 +209,47 @@ export default function MySpace() {
         <div className="m-box">
           <h2>Profile Song</h2>
           <div className="m-box-body">
-            <div
-              className={`m-player ${pixel.className} ${playing ? "is-playing" : ""}`}
-            >
-              <div className="m-screen">{SONG}</div>
-              <div className="m-controls">
-                <button
-                  type="button"
-                  className="m-play"
-                  aria-label={playing ? "Pause" : "Play"}
-                  onClick={togglePlay}
-                >
-                  {playing ? "❚❚" : "▶"}
-                </button>
-                <div className="m-bar">
-                  <div
-                    className="m-bar-fill"
-                    style={{
-                      width: duration ? `${(seconds / duration) * 100}%` : "0%",
-                    }}
-                  />
+            <div className="m-player-wrap">
+              <div
+                className={`m-player ${pixel.className} ${playing ? "is-playing" : ""}`}
+              >
+                <div className="m-screen">{SONG}</div>
+                <div className="m-controls">
+                  <button
+                    type="button"
+                    className="m-play"
+                    aria-label={playing ? "Pause" : "Play"}
+                    onClick={togglePlay}
+                  >
+                    {playing ? "❚❚" : "▶"}
+                  </button>
+                  <div className="m-bar">
+                    <div
+                      className="m-bar-fill"
+                      style={{
+                        width: duration
+                          ? `${(seconds / duration) * 100}%`
+                          : "0%",
+                      }}
+                    />
+                  </div>
+                  <div className="m-eq" aria-hidden="true">
+                    <i />
+                    <i />
+                    <i />
+                    <i />
+                    <i />
+                  </div>
+                  <span className="m-time">{formatTime(seconds)}</span>
                 </div>
-                <div className="m-eq" aria-hidden="true">
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                </div>
-                <span className="m-time">{formatTime(seconds)}</span>
               </div>
+              {/* the Spotify player, hidden underneath the retro player */}
+              <div
+                className="m-spotify"
+                ref={spotifyBoxRef}
+                aria-hidden="true"
+              />
             </div>
-            {/* the small Spotify player (Spotify requires it to stay visible) */}
-            <div className="m-spotify" ref={spotifyBoxRef} />
           </div>
         </div>
 
