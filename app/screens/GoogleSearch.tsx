@@ -13,7 +13,7 @@ const GLITCH_FRAMES = [
   { year: "2012", label: "YouTube", theme: "g-era-2012", ms: 150 },
   { year: "2019", label: "Instagram", theme: "g-era-2019", ms: 150 },
   { year: "2026", label: "AI", theme: "g-era-2026", ms: 150 },
-  { year: "", label: "", theme: "g-era-warning", ms: 3400 },
+  { year: "", label: "", theme: "g-era-warning", ms: 3700 },
 ];
 
 /* 1999: Google search page. Whatever the user types, it always goes to the results page */

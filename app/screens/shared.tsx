@@ -25,7 +25,11 @@ export const ASSETS = {
   zebra: "/assets/Zebra.png",
   profilePic: "/assets/Stansino.png",
   scorpion: "/assets/lobster.png",
-  friends: ["/assets/lody.png", "/assets/chris.png", "/assets/pieter.png"],
+  friends: [
+    { body: "/assets/lody-body.png", head: "/assets/lody-head.png" },
+    { body: "/assets/chris-body.png", head: "/assets/chris-head.png" },
+    { body: "/assets/pieter-body.png", head: "/assets/pieter-head.png" },
+  ],
   banners: "/assets/banners.png",
   videoThumb: "/assets/Youtube.png",
   chatIcon: "/assets/ChatIcon.png",

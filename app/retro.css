@@ -1275,3 +1275,71 @@
     animation: none;
   }
 }
+/* Top Friends: bobbleheads */
+.m-bobble {
+  position: relative;
+}
+.m-bobble-head {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 75%;
+}
+.m-friend:hover .m-bobble-body {
+  animation: none;
+}
+.m-friend:hover .m-bobble-head {
+  animation: m-bobble-head 0.7s ease-in-out infinite;
+}
+@keyframes m-bobble-head {
+  0% {
+    transform: rotate(0deg);
+  }
+  20% {
+    transform: rotate(-12deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+  80% {
+    transform: rotate(-6deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .m-friend:hover .m-bobble-head {
+    animation: none;
+  }
+}
+/* Bobblehead heads:*/
+.m-friend .m-bobble-head {
+  inset: auto;
+  top: var(--head-top);
+  left: var(--head-x);
+  width: var(--head-w);
+  height: auto;
+  aspect-ratio: auto;
+  object-fit: contain;
+  translate: -50% 0;
+  transform-origin: 50% 95%;
+}
+
+/* size and position per friend (left to right) */
+.m-friend:nth-child(1) {
+  --head-w: 66%; /* how wide the head is */
+  --head-x: 50%; /* left/right: 50% = centered */
+  --head-top: 8%; /* how far from the top */
+}
+.m-friend:nth-child(2) {
+  --head-w: 73%;
+  --head-x: 50%;
+  --head-top: 7%;
+}
+.m-friend:nth-child(3) {
+  --head-w: 76%;
+  --head-x: 52%;
+  --head-top: 5%;
+}

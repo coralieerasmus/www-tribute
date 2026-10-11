@@ -276,7 +276,18 @@ export default function MySpace() {
               <div className="m-box-body m-friends">
                 {FRIENDS.map((friend, i) => (
                   <div key={friend} className="m-friend">
-                    <Img src={ASSETS.friends[i]} alt="" />
+                    <div className="m-bobble">
+                      <Img
+                        className="m-bobble-body"
+                        src={ASSETS.friends[i].body}
+                        alt=""
+                      />
+                      <Img
+                        className="m-bobble-head"
+                        src={ASSETS.friends[i].head}
+                        alt=""
+                      />
+                    </div>
                     <span>{friend}</span>
                   </div>
                 ))}
