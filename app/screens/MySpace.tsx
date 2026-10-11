@@ -1,16 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { VT323 } from "next/font/google";
 import { ASSETS, Img } from "./shared";
 
 const pixel = VT323({ weight: "400", subsets: ["latin"] });
 
+/* Clicking the video opens YouTube page*/
 const VIDEO_URL = "/youtube";
 
-const BANNER_TEXT = "IF U SKIP MY PROFILE SONG UR CHOPPED!!!";
+/* ▼ The profile song on Spotify link*/
+const SPOTIFY_TRACK = "03UrZgTINDqvnUMbbIMhql";
 const SONG = 'DJ Unc & The Sigma Boys - "John Pork (Hallway Remix)" [128kbps]';
-const SONG_LENGTH = 201; // seconds (3:21)
+
+const BANNER_TEXT = "IF U SKIP MY PROFILE SONG UR CHOPPED!!!";
 
 const BLOG = [
   "tips on how to get students to stop asking for a feedpulse",
@@ -30,24 +33,98 @@ const NAV = [
   "Videos",
 ];
 
+/* Spotify's official "iFrame API": lets retro button control the Spotify player */
+type SpotifyPlayback = {
+  data: { isPaused: boolean; position: number; duration: number };
+};
+type SpotifyController = {
+  togglePlay: () => void;
+  destroy: () => void;
+  addListener: (event: string, callback: (e: SpotifyPlayback) => void) => void;
+};
+type SpotifyIFrameAPI = {
+  createController: (
+    element: HTMLElement,
+    options: { uri: string; width?: string | number; height?: string | number },
+    callback: (controller: SpotifyController) => void,
+  ) => void;
+};
+type SpotifyWindow = Window & {
+  onSpotifyIframeApiReady?: (api: SpotifyIFrameAPI) => void;
+  SpotifyIframeApi?: SpotifyIFrameAPI;
+};
+
 function formatTime(seconds: number) {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
 /* 2006: MySpace profile of @Stansino_Oers67 */
 export default function MySpace() {
-  // fake music player
+  // music player (controls the Spotify player underneath)
+  const spotifyBoxRef = useRef<HTMLDivElement>(null);
+  const controllerRef = useRef<SpotifyController | null>(null);
   const [playing, setPlaying] = useState(false);
   const [seconds, setSeconds] = useState(0);
+  const [duration, setDuration] = useState(0);
 
   useEffect(() => {
-    if (!playing) return;
-    const timer = setInterval(
-      () => setSeconds((s) => (s + 1) % SONG_LENGTH),
-      1000,
-    );
-    return () => clearInterval(timer);
-  }, [playing]);
+    const w = window as SpotifyWindow;
+    const box = spotifyBoxRef.current;
+    let cancelled = false;
+    let controller: SpotifyController | null = null;
+
+    function createPlayer(api: SpotifyIFrameAPI) {
+      if (cancelled || !box) return;
+      const target = document.createElement("div");
+      box.appendChild(target);
+      api.createController(
+        target,
+        { uri: `spotify:track:${SPOTIFY_TRACK}`, width: "100%", height: 80 },
+        (c) => {
+          if (cancelled) {
+            c.destroy();
+            return;
+          }
+          controller = c;
+          controllerRef.current = c;
+          c.addListener("playback_update", (e) => {
+            setPlaying(!e.data.isPaused);
+            setSeconds(Math.floor(e.data.position / 1000));
+            setDuration(Math.floor(e.data.duration / 1000));
+          });
+        },
+      );
+    }
+
+    if (w.SpotifyIframeApi) {
+      createPlayer(w.SpotifyIframeApi);
+    } else {
+      const previous = w.onSpotifyIframeApiReady;
+      w.onSpotifyIframeApiReady = (api) => {
+        w.SpotifyIframeApi = api;
+        previous?.(api);
+        createPlayer(api);
+      };
+      if (!document.getElementById("spotify-iframe-api")) {
+        const script = document.createElement("script");
+        script.id = "spotify-iframe-api";
+        script.src = "https://open.spotify.com/embed/iframe-api/v1";
+        script.async = true;
+        document.body.appendChild(script);
+      }
+    }
+
+    return () => {
+      cancelled = true;
+      controller?.destroy();
+      controllerRef.current = null;
+      if (box) box.innerHTML = "";
+    };
+  }, []);
+
+  function togglePlay() {
+    controllerRef.current?.togglePlay();
+  }
 
   return (
     <div className="m-page" style={{ backgroundImage: `url(${ASSETS.zebra})` }}>
@@ -123,11 +200,7 @@ export default function MySpace() {
                     <span className="m-dot" /> Online now!
                   </p>
                 </div>
-                <Img
-                  className="m-scorpion"
-                  src={ASSETS.scorpion}
-                  alt="Scorpion"
-                />
+                <Img className="m-scorpion" src={ASSETS.scorpion} alt="" />
               </div>
             </div>
           </div>
@@ -145,14 +218,16 @@ export default function MySpace() {
                   type="button"
                   className="m-play"
                   aria-label={playing ? "Pause" : "Play"}
-                  onClick={() => setPlaying(!playing)}
+                  onClick={togglePlay}
                 >
                   {playing ? "❚❚" : "▶"}
                 </button>
                 <div className="m-bar">
                   <div
                     className="m-bar-fill"
-                    style={{ width: `${(seconds / SONG_LENGTH) * 100}%` }}
+                    style={{
+                      width: duration ? `${(seconds / duration) * 100}%` : "0%",
+                    }}
                   />
                 </div>
                 <div className="m-eq" aria-hidden="true">
@@ -165,6 +240,8 @@ export default function MySpace() {
                 <span className="m-time">{formatTime(seconds)}</span>
               </div>
             </div>
+            {/* the small Spotify player (Spotify requires it to stay visible) */}
+            <div className="m-spotify" ref={spotifyBoxRef} />
           </div>
         </div>
 
@@ -211,21 +288,12 @@ export default function MySpace() {
             <a
               className="m-thumb"
               href={VIDEO_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+              aria-label="Watch the video"
             >
               <Img src={ASSETS.videoThumb} alt="" />
-              <span className="m-rec-label">● REC</span>
-              <span className="m-thumb-play">▶</span>
-              <span className="m-duration">4:22</span>
             </a>
             <div className="m-rec-info">
-              <a
-                className="m-rec-title"
-                href={VIDEO_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a className="m-rec-title" href={VIDEO_URL}>
                 OMG U HAVE 2 SEE THIS VIDEO!!!!!! (NOW PLS)
               </a>
               <p>+1000 aura per watch</p>
@@ -233,12 +301,7 @@ export default function MySpace() {
                 <span>
                   69 billion views <span className="m-stars">★★★★★</span>
                 </span>
-                <a
-                  className="m-yt"
-                  href={VIDEO_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <a className="m-yt" href={VIDEO_URL}>
                   ▶ Watch on YouTube
                 </a>
               </div>

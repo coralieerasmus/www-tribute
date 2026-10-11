@@ -1101,3 +1101,11 @@
     padding: 14px 18px;
   }
 }
+/*spotify embed*/
+.m-spotify {
+  margin-top: 12px;
+}
+.m-spotify iframe {
+  display: block;
+  border-radius: 12px;
+}
