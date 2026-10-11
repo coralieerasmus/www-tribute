@@ -1343,3 +1343,222 @@
   --head-x: 52%;
   --head-top: 5%;
 }
+
+/* ================= BLOG EASTER EGGS ================= */
+/* 1. feedpulse notifications */
+.m-spam {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(340px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: hidden;
+  justify-content: flex-end;
+}
+.m-spam-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  background: #fff;
+  border: 3px solid #5aa0e0;
+  border-radius: 10px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  font:
+    14px Verdana,
+    Tahoma,
+    sans-serif;
+  color: #000;
+  animation: m-pop-in 0.3s ease-out;
+}
+.m-spam-item b {
+  color: #0b5bb8;
+}
+.m-spam-final {
+  border-color: #c00;
+  background: #ffecec;
+}
+.m-spam-final b {
+  color: #c00;
+}
+@keyframes m-pop-in {
+  from {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* 2. UFO */
+.m-ufo-li {
+  position: relative;
+}
+.m-ufo {
+  position: absolute;
+  top: -70px;
+  left: 30%;
+  z-index: 5;
+  font-size: 48px;
+  line-height: 1;
+  animation: m-ufo-fly 4s ease-in-out forwards;
+  pointer-events: none;
+}
+.m-ufo-beam {
+  position: absolute;
+  top: 44px;
+  left: 50%;
+  width: 120px;
+  height: 80px;
+  translate: -50% 0;
+  background: linear-gradient(rgba(140, 255, 120, 0.8), rgba(140, 255, 120, 0));
+  clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%);
+  opacity: 0;
+  animation: m-ufo-beam 4s ease-in-out forwards;
+}
+.m-abducted {
+  display: inline-block;
+  animation: m-abduct 4s ease-in forwards;
+}
+.m-ufo-note {
+  display: block;
+  margin-top: 6px;
+  color: #13a313;
+  font-weight: bold;
+  font-size: 16px;
+}
+@keyframes m-ufo-fly {
+  0% {
+    transform: translateX(-400px);
+  }
+  30% {
+    transform: translateX(0);
+  }
+  70% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(700px);
+    opacity: 0;
+  }
+}
+@keyframes m-ufo-beam {
+  0%,
+  30% {
+    opacity: 0;
+  }
+  35%,
+  65% {
+    opacity: 1;
+  }
+  70%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes m-abduct {
+  0%,
+  35% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  65%,
+  100% {
+    transform: translateY(-50px) scale(0.2);
+    opacity: 0;
+  }
+}
+
+/* 3. dancing baby */
+.m-baby {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 16px;
+  background: radial-gradient(circle, #3a0066, #000);
+  cursor: pointer;
+  overflow: hidden;
+}
+.m-baby-close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  font:
+    bold 40px/1 Arial,
+    sans-serif;
+  color: #fff;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.m-baby-text {
+  margin: 0;
+  font:
+    bold clamp(28px, 6vw, 72px) "Comic Sans MS",
+    "Chalkboard SE",
+    cursive;
+  text-align: center;
+  background: linear-gradient(
+    90deg,
+    #ff4fd8,
+    #ffe53b,
+    #3be8b0,
+    #5ec8ff,
+    #ff4fd8
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: m-rainbow 2s linear infinite;
+}
+.m-baby-dancer {
+  width: min(320px, 60vw);
+  animation: m-dance-across 3s ease-in-out infinite alternate;
+}
+.m-baby-dancer img {
+  width: 100%;
+  display: block;
+}
+.m-baby-hint {
+  margin: 0;
+  color: #ccc;
+  font:
+    16px Verdana,
+    sans-serif;
+}
+@keyframes m-rainbow {
+  to {
+    background-position: 200% 0;
+  }
+}
+@keyframes m-dance-across {
+  from {
+    transform: translateX(-30vw);
+  }
+  to {
+    transform: translateX(30vw);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m-spam-item,
+  .m-ufo,
+  .m-ufo-beam,
+  .m-abducted,
+  .m-baby-text,
+  .m-baby-dancer {
+    animation-duration: 0.01s;
+  }
+}

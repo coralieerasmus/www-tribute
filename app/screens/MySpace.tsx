@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { VT323 } from "next/font/google";
 import { ASSETS, Img } from "./shared";
+import BlogEntries from "./BlogEntries";
 
 const pixel = VT323({ weight: "400", subsets: ["latin"] });
 
@@ -257,16 +258,7 @@ export default function MySpace() {
           <div className="m-box">
             <h2>Latest Blog Entries</h2>
             <div className="m-box-body">
-              <ul className="m-blog">
-                {BLOG.map((title) => (
-                  <li key={title}>
-                    <a href="#" onClick={(e) => e.preventDefault()}>
-                      {title}
-                    </a>
-                    <span className="m-view-more">(view more)</span>
-                  </li>
-                ))}
-              </ul>
+              <BlogEntries titles={BLOG} />
             </div>
           </div>
 
