@@ -1,20 +1,57 @@
 "use client";
 
+import { useState } from "react";
 import { ASSETS, Img, type GoTo } from "./shared";
 
-/* 1991: Windows desktop with the Internet "Instructions" popup */
+/* What each desktop icon says when you double-click it */
+const ICON_MESSAGES: Record<string, string> = {
+  "My Computer": "Connecting... please wait.",
+  "My Documents": "This folder is empty.",
+  "Internet Explorer": "Not invented yet. Try 1995.",
+  "Network Neighborhood": "No neighbors online.",
+  "Recycle Bin": "Recycle Bin is empty.",
+};
+
+/* 1991: Windows desktop with the Internet Wizard "Instructions" popup */
 export default function Instructions({ goTo }: { goTo: GoTo }) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const [message, setMessage] = useState<{
+    title: string;
+    text: string;
+  } | null>(null);
+
+  function openIcon(label: string) {
+    setSelected(label);
+    setMessage({
+      title: label,
+      text: ICON_MESSAGES[label] ?? "Please wait...",
+    });
+  }
+
   return (
     <div
       className="w-desktop"
       style={{ backgroundImage: `url(${ASSETS.wallpaper})` }}
+      onClick={(e) => {
+        // clicking the empty desktop deselects the icon
+        if (e.target === e.currentTarget) setSelected(null);
+      }}
     >
       <div className="w-icons">
         {ASSETS.desktopIcons.map((icon) => (
-          <div className="w-icon" key={icon.label}>
+          <button
+            key={icon.label}
+            type="button"
+            className={`w-icon ${selected === icon.label ? "is-selected" : ""}`}
+            onClick={() => setSelected(icon.label)}
+            onDoubleClick={() => openIcon(icon.label)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") openIcon(icon.label);
+            }}
+          >
             <Img src={icon.src} alt="" />
             <span>{icon.label}</span>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -81,6 +118,39 @@ export default function Instructions({ goTo }: { goTo: GoTo }) {
           </button>
         </div>
       </div>
+
+      {/* small Windows message when you double-click a desktop icon */}
+      {message && (
+        <div className="w-msg" role="alertdialog" aria-labelledby="w-msg-title">
+          <div className="w-titlebar w-msg-titlebar">
+            <span id="w-msg-title">{message.title}</span>
+            <button
+              className="w-msg-x"
+              type="button"
+              aria-label="Close"
+              onClick={() => setMessage(null)}
+            >
+              ×
+            </button>
+          </div>
+          <div className="w-msg-body">
+            <span className="w-msg-icon" aria-hidden="true">
+              i
+            </span>
+            <p>{message.text}</p>
+          </div>
+          <div className="w-msg-actions">
+            <button
+              className="w-btn w-default"
+              type="button"
+              autoFocus
+              onClick={() => setMessage(null)}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

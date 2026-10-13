@@ -1562,3 +1562,100 @@
     animation-duration: 0.01s;
   }
 }
+
+/* Desktop icons: Windows-style select + double-click popup */
+.w-icon {
+  background: none;
+  border: 0;
+  padding: 4px;
+  font: inherit;
+  color: inherit;
+  cursor: default;
+}
+.w-icon:focus-visible {
+  outline: 1px dotted #fff;
+}
+.w-icon.is-selected img {
+  filter: brightness(0.75) sepia(1) hue-rotate(190deg) saturate(4);
+}
+.w-icon.is-selected span {
+  background: #000080;
+  color: #fff;
+  text-shadow: none;
+  outline: 1px dotted #fff;
+}
+
+.w-msg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 20;
+  width: min(380px, 90vw);
+  translate: -50% -50%;
+  padding: 3px;
+  background: #c0c0c0;
+  box-shadow:
+    inset -1px -1px #0a0a0a,
+    inset 1px 1px #dfdfdf,
+    inset -2px -2px #808080,
+    inset 2px 2px #fff,
+    4px 4px 0 rgba(0, 0, 0, 0.35);
+}
+.w-msg-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 16px;
+}
+.w-msg-x {
+  width: 22px;
+  height: 20px;
+  padding: 0;
+  font:
+    bold 14px/1 Tahoma,
+    sans-serif;
+  color: #000;
+  background: #c0c0c0;
+  border: 0;
+  cursor: pointer;
+  box-shadow:
+    inset -1px -1px #0a0a0a,
+    inset 1px 1px #fff,
+    inset -2px -2px #808080;
+}
+.w-msg-body {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 22px 18px;
+  font:
+    16px Tahoma,
+    Verdana,
+    sans-serif;
+}
+.w-msg-body p {
+  margin: 0;
+}
+.w-msg-icon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #1f5fd6;
+  color: #fff;
+  font:
+    bold 22px Georgia,
+    serif;
+}
+.w-msg-actions {
+  display: flex;
+  justify-content: center;
+  padding: 0 0 14px;
+}
+.w-msg .w-btn {
+  min-width: 100px;
+  padding: 4px 12px;
+  font-size: 16px;
+}

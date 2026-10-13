@@ -302,6 +302,8 @@ export default function MySpace() {
               aria-label="Watch the video"
             >
               <Img src={ASSETS.videoThumb} alt="" />
+              <span className="m-rec-label">● REC</span>
+              <span className="m-thumb-play">▶</span>
             </a>
             <div className="m-rec-info">
               <a className="m-rec-title" href={VIDEO_URL}>
