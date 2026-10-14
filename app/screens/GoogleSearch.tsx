@@ -55,6 +55,7 @@ export default function GoogleSearch({ goTo }: { goTo: GoTo }) {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={() => new Audio("/assets/key.mp3").play().catch(() => {})}
           autoComplete="off"
           autoFocus
         />

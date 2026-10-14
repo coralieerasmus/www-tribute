@@ -19,40 +19,90 @@ const ICON_MESSAGES: Record<string, { loading?: string; text: string }> = {
 };
 
 const LOADING_TIME = 3000; // milliseconds
+const DIALUP_TIME = 6000; // how long the dial-up sound plays before the chat opens
 
-type Message = { title: string; text: string; loading: boolean };
+/* Sounds (in public/assets/) */
+const SOUND_DING = "/assets/ding.mp3";
+const SOUND_HUM = "/assets/hum.mp3";
+const SOUND_DIALUP = "/assets/dialup.mp3";
+const SOUND_STARTUP = "/assets/startup.mp3";
+
+function playSound(src: string) {
+  new Audio(src).play().catch(() => {});
+}
+
+type Message = { title: string; text: string; loading: boolean; time?: number };
 
 /* 1995: Windows desktop with the Internet Wizard popup */
 export default function Instructions({ goTo }: { goTo: GoTo }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [message, setMessage] = useState<Message | null>(null);
+  const [connecting, setConnecting] = useState(false);
   const timer = useRef<number | null>(null);
+  const hum = useRef<HTMLAudioElement | null>(null);
+  const dialup = useRef<HTMLAudioElement | null>(null);
 
-  // stop the loading timer when leaving the page
+  // stop the timer and all sounds when leaving the page
   useEffect(() => {
     return () => {
       if (timer.current) clearTimeout(timer.current);
+      hum.current?.pause();
+      dialup.current?.pause();
     };
   }, []);
 
+  // quiet computer hum in the background
+  // (browsers only allow sound after the first click, so it starts then)
+  function startHum() {
+    if (hum.current) return;
+    playSound(SOUND_STARTUP); // the famous Windows 95 startup sound, once
+    const audio = new Audio(SOUND_HUM);
+    audio.loop = true;
+    audio.volume = 0.25;
+    audio.play().catch(() => {});
+    hum.current = audio;
+  }
+
+  // Start: dial-up sound + "Connecting..." popup, then the chat opens
+  function connect() {
+    if (connecting) return;
+    setConnecting(true);
+    if (timer.current) clearTimeout(timer.current);
+    const audio = new Audio(SOUND_DIALUP);
+    audio.play().catch(() => {});
+    dialup.current = audio;
+    setMessage({
+      title: "Dial-Up Connection",
+      text: "Dialing... connecting to the Internet (28.8k modem)",
+      loading: true,
+      time: DIALUP_TIME,
+    });
+    timer.current = window.setTimeout(() => goTo("chat"), DIALUP_TIME);
+  }
+
   function openIcon(label: string) {
+    if (connecting) return; // busy dialing in, ignore the icons
     const info = ICON_MESSAGES[label] ?? { text: "Please wait..." };
     setSelected(label);
     if (timer.current) clearTimeout(timer.current);
 
     if (info.loading) {
-      // first the loading bar, then the final message
+      // first the loading bar, then the final message (with a ding)
       setMessage({ title: label, text: info.loading, loading: true });
       timer.current = window.setTimeout(() => {
         setMessage({ title: label, text: info.text, loading: false });
+        playSound(SOUND_DING);
       }, LOADING_TIME);
     } else {
       setMessage({ title: label, text: info.text, loading: false });
+      playSound(SOUND_DING);
     }
   }
 
   function closeMessage() {
     if (timer.current) clearTimeout(timer.current);
+    dialup.current?.pause();
+    setConnecting(false);
     setMessage(null);
   }
 
@@ -60,6 +110,7 @@ export default function Instructions({ goTo }: { goTo: GoTo }) {
     <div
       className="w-desktop"
       style={{ backgroundImage: `url(${ASSETS.wallpaper})` }}
+      onPointerDown={startHum}
       onClick={(e) => {
         // clicking the empty desktop deselects the icon
         if (e.target === e.currentTarget) setSelected(null);
@@ -117,11 +168,7 @@ export default function Instructions({ goTo }: { goTo: GoTo }) {
             <button className="w-btn" type="button" disabled>
               &lt; <u>B</u>ack
             </button>
-            <button
-              className="w-btn w-default"
-              type="button"
-              onClick={() => goTo("chat")}
-            >
+            <button className="w-btn w-default" type="button" onClick={connect}>
               <u>S</u>tart
             </button>
           </div>
@@ -157,7 +204,12 @@ export default function Instructions({ goTo }: { goTo: GoTo }) {
                   role="progressbar"
                   aria-label="Loading"
                 >
-                  <div className="w-loadbar-fill" />
+                  <div
+                    className="w-loadbar-fill"
+                    style={{
+                      animationDuration: `${message.time ?? LOADING_TIME}ms`,
+                    }}
+                  />
                 </div>
               )}
             </div>

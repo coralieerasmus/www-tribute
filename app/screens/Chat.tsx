@@ -17,15 +17,27 @@ const STEPS = [
   {
     says: ["hey!! u finally got the internet?? :)"],
     replies: [
-      { text: "yes!! just connected", answer: "welcome 2 the world wide web!!!" },
+      {
+        text: "yes!! just connected",
+        answer: "welcome 2 the world wide web!!!",
+      },
       { text: "who is this??", answer: "its Erik lol. u added me yesterday" },
-      { text: "brb my mom needs the phone", answer: "NOOO dont hang up the phone line!!" },
+      {
+        text: "brb my mom needs the phone",
+        answer: "NOOO dont hang up the phone line!!",
+      },
     ],
   },
   {
-    says: ["im SO hungry", "did u know u can order pizza ON THE INTERNET now??"],
+    says: [
+      "im SO hungry",
+      "did u know u can order pizza ON THE INTERNET now??",
+    ],
     replies: [
-      { text: "no way, online??", answer: "YES WAY. its 1997, everything is online" },
+      {
+        text: "no way, online??",
+        answer: "YES WAY. its 1997, everything is online",
+      },
       { text: "how???", answer: "easy, u just have to find the website" },
       { text: "just call them lol", answer: "calling is sooo 1994" },
     ],
@@ -70,6 +82,7 @@ export default function Chat({ goTo }: { goTo: GoTo }) {
   const [now, setNow] = useState(eraNow());
   const timers = useRef<number[]>([]);
   const listRef = useRef<HTMLDivElement>(null);
+  const typingSound = useRef<HTMLAudioElement | null>(null);
 
   function addLine(from: string, text: string) {
     setLines((old) => [...old, { from, text, time: formatTime(eraNow()) }]);
@@ -82,11 +95,14 @@ export default function Chat({ goTo }: { goTo: GoTo }) {
   /* Erik types his messages one by one, then you can reply */
   function friendSays(texts: string[], whenFinished: () => void) {
     texts.forEach((text, i) => {
-      const id = window.setTimeout(() => {
-        addLine(FRIEND, text);
-        playSound();
-        if (i === texts.length - 1) whenFinished();
-      }, TYPE_TIME * (i + 1));
+      const id = window.setTimeout(
+        () => {
+          addLine(FRIEND, text);
+          playSound();
+          if (i === texts.length - 1) whenFinished();
+        },
+        TYPE_TIME * (i + 1),
+      );
       timers.current.push(id);
     });
   }
@@ -116,6 +132,24 @@ export default function Chat({ goTo }: { goTo: GoTo }) {
     return () => clearInterval(clock);
   }, []);
 
+  // keyboard clacking while Erik is typing
+  useEffect(() => {
+    if (!typingSound.current) {
+      const audio = new Audio("/assets/typing.mp3");
+      audio.loop = true;
+      audio.volume = 0.4;
+      typingSound.current = audio;
+    }
+    const isTyping = !canReply && !done;
+    if (isTyping) typingSound.current.play().catch(() => {});
+    else typingSound.current.pause();
+  }, [canReply, done]);
+
+  // stop the typing sound when leaving the chat
+  useEffect(() => {
+    return () => typingSound.current?.pause();
+  }, []);
+
   // always scroll to the newest message
   useEffect(() => {
     const list = listRef.current;
@@ -130,7 +164,11 @@ export default function Chat({ goTo }: { goTo: GoTo }) {
 
   return (
     <div className="c-desktop">
-      <div className="c-window" role="dialog" aria-label={`Chat with ${FRIEND}`}>
+      <div
+        className="c-window"
+        role="dialog"
+        aria-label={`Chat with ${FRIEND}`}
+      >
         {/* title bar: today's date and time, but in 1997 */}
         <div className="w-titlebar c-titlebar">
           {formatDate(now)} &nbsp;{formatTime(now)}
@@ -145,17 +183,25 @@ export default function Chat({ goTo }: { goTo: GoTo }) {
           {lines.map((line, i) => (
             <p key={i} className="c-line">
               <span className="c-time">[{line.time}]</span>{" "}
-              <span className={line.from === YOU ? "c-you" : "c-friend"}>{line.from}:</span>{" "}
+              <span className={line.from === YOU ? "c-you" : "c-friend"}>
+                {line.from}:
+              </span>{" "}
               {line.text}
             </p>
           ))}
-          {!canReply && !done && <p className="c-typing">{FRIEND} is typing...</p>}
+          {!canReply && !done && (
+            <p className="c-typing">{FRIEND} is typing...</p>
+          )}
         </div>
 
         <div className="c-replies">
           {/* small skip button, for people who don't want to chat */}
           {!done && (
-            <button type="button" className="c-skip" onClick={() => goTo("google")}>
+            <button
+              type="button"
+              className="c-skip"
+              onClick={() => goTo("google")}
+            >
               Skip &gt;&gt;
             </button>
           )}
@@ -173,7 +219,11 @@ export default function Chat({ goTo }: { goTo: GoTo }) {
             ))}
 
           {done && (
-            <button type="button" className="w-btn w-default c-reply" onClick={() => goTo("google")}>
+            <button
+              type="button"
+              className="w-btn w-default c-reply"
+              onClick={() => goTo("google")}
+            >
               Open Google &gt;
             </button>
           )}
