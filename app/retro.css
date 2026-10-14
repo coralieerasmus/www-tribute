@@ -1708,3 +1708,161 @@
 .era-2006::after {
   display: none;
 }
+
+/* ===== Loading bar inside desktop icon popups ===== */
+.w-msg-content p {
+  margin: 0 0 10px;
+}
+.w-loadbar {
+  width: 220px;
+  height: 18px;
+  padding: 2px;
+  background: #fff;
+  box-shadow:
+    inset 1px 1px #808080,
+    inset -1px -1px #fff;
+}
+.w-loadbar-fill {
+  height: 100%;
+  width: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    #000080 0 10px,
+    transparent 10px 12px
+  );
+  animation: w-load 3s steps(18) forwards;
+}
+@keyframes w-load {
+  to {
+    width: 100%;
+  }
+}
+/* ===== 1997 CHAT (CyberErik97 message window) ===== */
+.c-desktop {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #008080; /* classic Windows turquoise */
+  font-family: Tahoma, "MS Sans Serif", Geneva, sans-serif;
+  color: #000;
+}
+.c-window {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(560px, 92vw);
+  height: min(560px, 86vh);
+  display: flex;
+  flex-direction: column;
+  padding: 3px;
+  background: #c0c0c0;
+  box-shadow:
+    inset -1px -1px #0a0a0a,
+    inset 1px 1px #dfdfdf,
+    inset -2px -2px #808080,
+    inset 2px 2px #fff;
+}
+.c-titlebar {
+  font-size: 16px;
+}
+.c-user {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 8px;
+  font-size: 16px;
+}
+.c-online {
+  font-size: 13px;
+  color: #008000;
+}
+.c-messages {
+  flex: 1;
+  overflow-y: auto;
+  margin: 0 8px;
+  padding: 10px;
+  background: #fff;
+  box-shadow:
+    inset 1px 1px #808080,
+    inset -1px -1px #fff,
+    inset 2px 2px #0a0a0a;
+  font:
+    15px "Courier New",
+    monospace;
+}
+.c-line {
+  margin: 0 0 8px;
+}
+.c-time {
+  color: #808080;
+}
+.c-friend {
+  color: #c00000;
+  font-weight: bold;
+}
+.c-you {
+  color: #0000c0;
+  font-weight: bold;
+}
+.c-typing {
+  margin: 0;
+  color: #808080;
+  font-style: italic;
+}
+.c-replies {
+  min-height: 56px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 8px 8px;
+}
+.c-reply {
+  min-width: 0;
+  font-size: 15px;
+  padding: 6px 12px;
+}
+
+/* 1997 look: between pixelated 1995 and sharper 1999 */
+.era-1997 {
+  filter: saturate(0.92) contrast(1.04);
+}
+/* chat: small skip button */
+.c-skip {
+  margin-right: auto;
+  align-self: center;
+  padding: 0;
+  background: none;
+  border: 0;
+  font:
+    13px Tahoma,
+    "MS Sans Serif",
+    sans-serif;
+  color: #000080;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* 1997 vintage look: CRT lines + dark corners (a bit softer than 1995) */
+.era-1997 {
+  filter: saturate(0.9) contrast(1.05) blur(0.3px);
+}
+.era-1997::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.1) 0 1px,
+      transparent 1px 3px
+    ),
+    radial-gradient(
+      ellipse at center,
+      transparent 60%,
+      rgba(0, 0, 0, 0.35) 100%
+    );
+}

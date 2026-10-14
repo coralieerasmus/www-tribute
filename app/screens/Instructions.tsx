@@ -1,31 +1,59 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ASSETS, Img, type GoTo } from "./shared";
 
-/* What each desktop icon says when you double-click it */
-const ICON_MESSAGES: Record<string, string> = {
-  "My Computer": "Connecting... please wait.",
-  "My Documents": "This folder is empty.",
-  "Internet Explorer": "Not invented yet. Try 1995.",
-  "Network Neighborhood": "No neighbors online.",
-  "Recycle Bin": "Recycle Bin is empty.",
+/* What each desktop icon says when you double-click it.*/
+const ICON_MESSAGES: Record<string, { loading?: string; text: string }> = {
+  "My Computer": {
+    loading: "Connecting... please wait.",
+    text: "Connected! Click Start in the Internet Wizard to go online.",
+  },
+  "My Documents": { text: "This folder is empty." },
+  "Internet Explorer": {
+    loading: "Loading... (28.8k modem)",
+    text: "Connection failed. Please run the Internet Wizard first.",
+  },
+  "Network Neighborhood": { text: "No neighbors online." },
+  "Recycle Bin": { text: "Recycle Bin is empty." },
 };
 
-/* 1991: Windows desktop with the Internet Wizard "Instructions" popup */
+const LOADING_TIME = 3000; // milliseconds
+
+type Message = { title: string; text: string; loading: boolean };
+
+/* 1995: Windows desktop with the Internet Wizard popup */
 export default function Instructions({ goTo }: { goTo: GoTo }) {
   const [selected, setSelected] = useState<string | null>(null);
-  const [message, setMessage] = useState<{
-    title: string;
-    text: string;
-  } | null>(null);
+  const [message, setMessage] = useState<Message | null>(null);
+  const timer = useRef<number | null>(null);
+
+  // stop the loading timer when leaving the page
+  useEffect(() => {
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, []);
 
   function openIcon(label: string) {
+    const info = ICON_MESSAGES[label] ?? { text: "Please wait..." };
     setSelected(label);
-    setMessage({
-      title: label,
-      text: ICON_MESSAGES[label] ?? "Please wait...",
-    });
+    if (timer.current) clearTimeout(timer.current);
+
+    if (info.loading) {
+      // first the loading bar, then the final message
+      setMessage({ title: label, text: info.loading, loading: true });
+      timer.current = window.setTimeout(() => {
+        setMessage({ title: label, text: info.text, loading: false });
+      }, LOADING_TIME);
+    } else {
+      setMessage({ title: label, text: info.text, loading: false });
+    }
+  }
+
+  function closeMessage() {
+    if (timer.current) clearTimeout(timer.current);
+    setMessage(null);
   }
 
   return (
@@ -69,31 +97,15 @@ export default function Instructions({ goTo }: { goTo: GoTo }) {
           </div>
 
           <div className="w-text w-mono">
-            <h1 className="w-h-instructions">Instructions</h1>
+            <h1 className="w-h-instructions">Welcome to 1995</h1>
             <p>
-              You&apos;ve just logged on. The year is 1991, and the World Wide
-              Web has only just been born.
+              This website is a time machine through the history of the
+              internet.
             </p>
             <p>
-              Your mission:
-              <br />
-              Travel through the history of the web by completing tasks. Every
-              task you finish moves you forward in time, and the website changes
-              with you.
+              Complete each task to travel forward in time, and watch the web
+              change around you.
             </p>
-            <div>
-              How it works:
-              <ul>
-                <li>
-                  Complete the tasks you&apos;re given to unlock the next era.
-                </li>
-                <li>Watch the website grow up around you</li>
-                <li>
-                  Check your progress anytime in the Task List to see what
-                  you&apos;ve completed and what&apos;s still left.
-                </li>
-              </ul>
-            </div>
             <p>Ready to surf the web?</p>
           </div>
         </div>
@@ -108,7 +120,7 @@ export default function Instructions({ goTo }: { goTo: GoTo }) {
             <button
               className="w-btn w-default"
               type="button"
-              onClick={() => goTo("google")}
+              onClick={() => goTo("chat")}
             >
               <u>S</u>tart
             </button>
@@ -128,7 +140,7 @@ export default function Instructions({ goTo }: { goTo: GoTo }) {
               className="w-msg-x"
               type="button"
               aria-label="Close"
-              onClick={() => setMessage(null)}
+              onClick={closeMessage}
             >
               ×
             </button>
@@ -137,16 +149,27 @@ export default function Instructions({ goTo }: { goTo: GoTo }) {
             <span className="w-msg-icon" aria-hidden="true">
               i
             </span>
-            <p>{message.text}</p>
+            <div className="w-msg-content">
+              <p>{message.text}</p>
+              {message.loading && (
+                <div
+                  className="w-loadbar"
+                  role="progressbar"
+                  aria-label="Loading"
+                >
+                  <div className="w-loadbar-fill" />
+                </div>
+              )}
+            </div>
           </div>
           <div className="w-msg-actions">
             <button
               className="w-btn w-default"
               type="button"
               autoFocus
-              onClick={() => setMessage(null)}
+              onClick={closeMessage}
             >
-              OK
+              {message.loading ? "Cancel" : "OK"}
             </button>
           </div>
         </div>

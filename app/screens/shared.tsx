@@ -36,9 +36,10 @@ export const ASSETS = {
   envelope: "/assets/Envelope.png",
 };
 
-/* All screens of the website*/
+/* All screens of the website */
 export type Screen =
   | "instructions"
+  | "chat"
   | "google"
   | "results"
   | "pizzahut"
