@@ -11,10 +11,10 @@ const pixel = VT323({ weight: "400", subsets: ["latin"] });
 const VIDEO_URL = "/youtube";
 
 /* ▼ The profile song on Spotify*/
-const SPOTIFY_TRACK = "03UrZgTINDqvnUMbbIMhql";
-const SONG = 'DJ Unc & The Sigma Boys - "John Pork (Hallway Remix)" [128kbps]';
+const SPOTIFY_TRACK = "3d0WouFnFmr0K3kjeza3fF?si=d5eef774fd8046a2";
+const SONG = 'Shakira - "Hips don\'t lie" [128kbps]';
 
-const BANNER_TEXT = "IF U SKIP MY PROFILE SONG UR CHOPPED!!!";
+const BANNER_TEXT = "IF U SKIP MY PROFILE SONG UR A LOSER!!!";
 
 const BLOG = [
   "tips on how to get students to stop asking for a feedpulse",
@@ -307,9 +307,9 @@ export default function MySpace() {
             </a>
             <div className="m-rec-info">
               <a className="m-rec-title" href={VIDEO_URL}>
-                OMG U HAVE 2 SEE THIS VIDEO!!!!!! (NOW PLS)
+                Every conspiracy theory explained in 24 mins
               </a>
-              <p>+1000 aura per watch</p>
+              <p>OMG U HAVE 2 SEE THIS VIDEO!!!!!! (NOW PLS)</p>
               <div className="m-rec-bottom">
                 <span>
                   69 billion views <span className="m-stars">★★★★★</span>
