@@ -1866,3 +1866,73 @@
       rgba(0, 0, 0, 0.35) 100%
     );
 }
+/* ===== MOUSE CURSORS PER ERA ===== */
+/* 1995-1999 (Windows 95/98): white pixel arrow + pixel hand
+   2006 (Windows XP): smooth white arrow with a soft shadow */
+.era {
+  --arrow: default;
+  --hand: pointer;
+}
+.era-1995,
+.era-1997,
+.era-1999 {
+  --arrow: url("/assets/cursors/arrow.png") 0 0, default;
+  --hand: url("/assets/cursors/hand.png") 9 0, pointer;
+}
+.era-2006 {
+  --arrow: url("/assets/cursors/arrow-xp.png") 1 1, default;
+  --hand: pointer;
+}
+
+/* normal text and everything else: just the arrow (no text cursor) */
+:where(.era, .era *) {
+  cursor: var(--arrow);
+}
+
+/* things you can click: the hand */
+.era
+  :is(
+    a,
+    button,
+    label,
+    summary,
+    select,
+    [role="button"],
+    input[type="radio"],
+    input[type="checkbox"],
+    input[type="submit"],
+    input[type="button"]
+  ) {
+  cursor: var(--hand);
+}
+
+/* disabled buttons (like "< Back"): arrow */
+.era button:disabled {
+  cursor: var(--arrow);
+}
+
+/* boxes you type in: the text cursor */
+.era
+  :is(
+    input[type="text"],
+    input[type="tel"],
+    input[type="search"],
+    input[type="email"],
+    input:not([type]),
+    textarea
+  ) {
+  cursor: text;
+}
+/* whole page gets the retro cursor too, so it never flashes the modern one */
+html,
+body {
+  cursor:
+    url("/assets/cursors/arrow.png") 0 0,
+    default;
+}
+html[data-cursor="xp"],
+html[data-cursor="xp"] body {
+  cursor:
+    url("/assets/cursors/arrow-xp.png") 1 1,
+    default;
+}

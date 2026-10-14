@@ -30,6 +30,13 @@ const ERA_LOOK: Record<Screen, string> = {
   myspace: "era-2006",
 };
 
+/* The mouse cursor pictures (in public/assets/cursors/) */
+const CURSOR_FILES = [
+  "/assets/cursors/arrow.png",
+  "/assets/cursors/hand.png",
+  "/assets/cursors/arrow-xp.png",
+];
+
 /* This file only decides which screen to show.
    Every screen lives in its own file in app/screens/
    The current screen is saved in the address bar (e.g. localhost:3000/#pizzahut),
@@ -46,6 +53,22 @@ export default function Home() {
     window.addEventListener("hashchange", readAddressBar);
     return () => window.removeEventListener("hashchange", readAddressBar);
   }, []);
+
+  // load the retro cursor pictures right away, so they never flash
+  useEffect(() => {
+    CURSOR_FILES.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, []);
+
+  // tell the whole page which cursor to use (also while switching screens)
+  useEffect(() => {
+    if (screen) {
+      document.documentElement.dataset.cursor =
+        ERA_LOOK[screen] === "era-2006" ? "xp" : "retro";
+    }
+  }, [screen]);
 
   function goTo(next: Screen) {
     window.location.hash = next;
