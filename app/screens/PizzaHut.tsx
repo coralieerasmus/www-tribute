@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ASSETS, Img, type GoTo } from "./shared";
 
 const SIZES = ["Small", "Medium", "Large"];
@@ -37,6 +37,12 @@ export default function PizzaHut({ goTo }: { goTo: GoTo }) {
   const [ordered, setOrdered] = useState(false);
   const [notificationClosed, setNotificationClosed] = useState(false);
   const showNotification = ordered && popup === "none" && !notificationClosed;
+
+  // play the "ding" when the notification appears
+  useEffect(() => {
+    if (showNotification)
+      new Audio("/assets/notification.mp3").play().catch(() => {});
+  }, [showNotification]);
 
   function toggleTopping(topping: string) {
     setToppings((current) =>

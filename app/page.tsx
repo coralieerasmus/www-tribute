@@ -17,6 +17,16 @@ const SCREENS: Screen[] = [
   "myspace",
 ];
 
+/* Screen quality per era: older = more pixelated, newer = sharper.
+   The looks are defined in retro.css (.era-1995, .era-1999, .era-2006) */
+const ERA_LOOK: Record<Screen, string> = {
+  instructions: "era-1995",
+  google: "era-1999",
+  results: "era-1999",
+  pizzahut: "era-1999",
+  myspace: "era-2006",
+};
+
 /* This file only decides which screen to show.
    Every screen lives in its own file in app/screens/
    The current screen is saved in the address bar (e.g. localhost:3000/#pizzahut),
@@ -40,9 +50,32 @@ export default function Home() {
 
   if (screen === null) return null; // first split second: wait for the address bar
 
-  if (screen === "google") return <GoogleSearch goTo={goTo} />;
-  if (screen === "results") return <GoogleResults goTo={goTo} />;
-  if (screen === "pizzahut") return <PizzaHut goTo={goTo} />;
-  if (screen === "myspace") return <MySpace />;
-  return <Instructions goTo={goTo} />;
+  let content;
+  if (screen === "google") content = <GoogleSearch goTo={goTo} />;
+  else if (screen === "results") content = <GoogleResults goTo={goTo} />;
+  else if (screen === "pizzahut") content = <PizzaHut goTo={goTo} />;
+  else if (screen === "myspace") content = <MySpace />;
+  else content = <Instructions goTo={goTo} />;
+
+  return (
+    <>
+      {/* invisible "pixel" filter used by the older eras */}
+      <svg
+        width="0"
+        height="0"
+        style={{ position: "absolute" }}
+        aria-hidden="true"
+      >
+        <filter id="pixelate" x="0" y="0" width="100%" height="100%">
+          <feFlood x="1" y="1" height="1" width="1" />
+          <feComposite width="2" height="2" />
+          <feTile result="grid" />
+          <feComposite in="SourceGraphic" in2="grid" operator="in" />
+          <feMorphology operator="dilate" radius="1" />
+        </filter>
+      </svg>
+
+      <div className={`era ${ERA_LOOK[screen]}`}>{content}</div>
+    </>
+  );
 }
