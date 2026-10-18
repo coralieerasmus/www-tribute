@@ -169,7 +169,7 @@ export default function LaptopScene({ tint, spinKey }: { tint: string; spinKey: 
             const list = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
             list.forEach((m) => {
               Object.values(m).forEach((v) => {
-                if (v && typeof v === "object" && "isTexture" in v) (v as { dispose(): void }).dispose();
+                if (v && typeof v === "object" && "isTexture" in v) (v as unknown as { dispose(): void }).dispose();
               });
               m.dispose();
             });
