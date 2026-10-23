@@ -587,6 +587,62 @@
   font-size: 13px;
 }
 
+/* css phone thumbnails */
+.phoneThumb {
+  position: relative;
+  width: 44px;
+  height: 86px;
+  padding: 3px;
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25), 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+.phoneScreen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 7px;
+  overflow: hidden;
+}
+.phoneIsland {
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  width: 14px;
+  height: 4px;
+  margin-left: -7px;
+  border-radius: 3px;
+  background: #000;
+}
+.phoneCams {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.18);
+}
+.phoneCams span {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #111;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.25);
+}
+.phoneCams span:nth-child(1) {
+  top: 2px;
+  left: 2px;
+}
+.phoneCams span:nth-child(2) {
+  top: 12px;
+  left: 2px;
+}
+.phoneCams span:nth-child(3) {
+  top: 7px;
+  left: 12px;
+}
+
 /* css laptop thumbnails */
 .thumb {
   width: 104px;

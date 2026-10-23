@@ -15,6 +15,9 @@ import { getAudioContext } from "@/lib/sounds";
  *   percentile), so it can't creep up while you're talking.
  * - "Speech" = clearly louder than the room (about +9 dB), "silence" = back
  *   near the room level (about +4 dB). Works for quiet and loud mics alike.
+ * - BUSY ROOM mode (toggle in the join dialog, remembered per browser): other
+ *   people talking count as "room", so you have to be clearly louder than them
+ *   (about +13 dB). The call also uses your own voice level to see when you stop.
  *
  * `start(stream?)` can reuse a stream that already has an audio track
  * (e.g. one getUserMedia call for camera + mic, like real Zoom).
@@ -24,6 +27,8 @@ export function useMic() {
   const floorRef = useRef(0.002);
   const thresholdRef = useRef(0.006);
   const silenceRef = useRef(0.0035);
+  const ratioRef = useRef(2.8);
+  const [busy, setBusyState] = useState(false);
   const streamRef = useRef<MediaStream | null>(null);
   const [status, setStatus] = useState<"idle" | "requesting" | "on" | "denied">("idle");
   const [speaking, setSpeaking] = useState(false);
@@ -38,7 +43,7 @@ export function useMic() {
         stream = new MediaStream(existing.getAudioTracks());
       } else {
         stream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false },
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false },
         });
       }
       streamRef.current = stream;
@@ -88,7 +93,7 @@ export function useMic() {
           const view = sorted.subarray(0, hCount).sort();
           const floor = Math.max(0.0002, view[Math.floor(hCount * 0.15)]);
           floorRef.current = floor;
-          thresholdRef.current = Math.max(0.0015, floor * 2.8); // ≈ +9 dB above the room
+          thresholdRef.current = Math.max(0.0015, floor * ratioRef.current); // ≈ +9 dB (+13 dB busy) above the room
           silenceRef.current = Math.max(0.001, floor * 1.6); //  ≈ +4 dB above the room
         }
 
@@ -122,7 +127,29 @@ export function useMic() {
     setSpeaking(false);
   }, []);
 
+  /** Busy room mode: stricter speech detection. Remembered in this browser. */
+  const setBusy = useCallback((b: boolean) => {
+    ratioRef.current = b ? 4.5 : 2.8;
+    setBusyState(b);
+    try {
+      localStorage.setItem("tribute-busy-room", b ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("tribute-busy-room") === "1") {
+        ratioRef.current = 4.5;
+        setBusyState(true);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   useEffect(() => () => stopRef.current?.(), []);
 
-  return { start, stop, status, speaking, levelRef, floorRef, thresholdRef, silenceRef };
+  return { start, stop, status, speaking, busy, setBusy, levelRef, floorRef, thresholdRef, silenceRef };
 }

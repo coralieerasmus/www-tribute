@@ -66,10 +66,15 @@
 }
 
 /* ---------- black ink ---------- */
-.ink {
+.inkBlob {
   position: absolute;
-  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, #000 66%, rgba(0, 0, 0, 0.85) 69%, transparent 71%);
+  transform: scale(0);
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.7, 0, 0.9, 0.6);
   pointer-events: none;
+  will-change: transform;
 }
 
 /* ---------- dead lines ---------- */
@@ -169,25 +174,36 @@
   }
 }
 
-/* ---------- final death ---------- */
-.dying {
-  animation: die 0.9s steps(6) forwards;
+/* ---------- final death: a couple of white flickers, then black ---------- */
+.death {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+}
+.deathOn {
+  animation: die 0.9s steps(1) forwards;
 }
 @keyframes die {
   0% {
-    filter: none;
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+    background: #fff;
   }
   30% {
-    filter: brightness(2) saturate(0);
+    opacity: 1;
+    background: #000;
   }
   45% {
-    filter: brightness(0.3);
+    opacity: 0.4;
+    background: #000;
   }
-  60% {
-    filter: brightness(1.4);
-  }
+  60%,
   100% {
-    filter: brightness(0);
+    opacity: 1;
     background: #000;
   }
 }

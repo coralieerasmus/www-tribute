@@ -9,24 +9,32 @@ export const ROUTES = {
   call: "/call",
   google: "/google",
   googleSearch: "/google/search",
-  apple: "/apple",
+  apple: "/apple", // the iPhone store + brainrot finale
 } as const;
 
 export const TIMINGS = {
   /** How long the user is on the YouTube page before the Zoom call comes in. */
-  youtubeBeforeCallMs: 60_000,
+  youtubeBeforeCallMs: 45_000,
   /** How long the "haha u thought" text stays before the call opens. */
   declineJokeMs: 1_800,
   /** Latest moment the lag starts (normally it starts right after the last question is answered). */
   callBeforeGlitchMs: 90_000,
-  /** How long it lags before the "get a new laptop" clip interrupts. */
+  /** How long it lags before the "get a new phone" clip interrupts. */
   glitchLeadMs: 2_500,
   /** Time the "meeting ended" message stays before going to Google. */
   callEndedMs: 3_000,
-  /** How long the user is on the Apple page before the screen breaks. */
-  appleBeforeBreakMs: 30_000,
-  /** How long the screen break lasts before going back to the landing page. */
-  screenBreakMs: 7_000,
+
+  /* ---- iPhone store → brainrot finale ---- */
+  /** How long the user can browse the iPhone store before the finale starts. */
+  storeMs: 15_000,
+  /** The store fades away until only the phone is left. */
+  finaleFadeMs: 1_200,
+  /** Only the phone, swiping through the feed. */
+  finaleSoloMs: 4_500,
+  /** The phone flies away and the wall of screens appears. */
+  finaleZoomMs: 6_000,
+  /** The final screen break / glitch before going back to the landing page. */
+  screenBreakMs: 3_000,
 } as const;
 
 /** The person "calling" the user. Used in the invite popup and the call. */
@@ -37,6 +45,19 @@ export const CALLER = {
 
 /** Label on the user's own tile in the call. */
 export const USER_LABEL = "You";
+
+/**
+ * The timeline bar shown on every page. Order = order of the journey.
+ * `year` is the big label, `label` the small one underneath.
+ */
+export const ERAS = [
+  { id: "youtube", year: "2012", label: "YouTube" },
+  { id: "call", year: "2020", label: "Zoom" },
+  { id: "google", year: "2025", label: "Google" },
+  { id: "apple", year: "2026", label: "iPhone" },
+  { id: "feed", year: "Now", label: "The feed" },
+] as const;
+export type EraId = (typeof ERAS)[number]["id"];
 
 /**
  * Optional brand images (export them from your Figma designs and put them in /public/brand).
@@ -50,7 +71,9 @@ export const BRAND = {
   zoomLogo: "/brand/zoom-logo.svg",
 } as const;
 
-/** Optional sound files. If missing, the sounds are synthesised in the browser. */
+/** Optional sound files. If missing, the sounds are synthesised in the browser (or skipped). */
 export const SOUNDS = {
   ring: "/sounds/zoom-ring.mp3",
+  /** optional: loops during the brainrot finale */
+  brainrot: "/sounds/brainrot.mp3",
 } as const;

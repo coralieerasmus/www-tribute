@@ -30,7 +30,7 @@ function stripes(rand: () => number, dir = "90deg") {
   const stops: string[] = [];
   let x = 0;
   while (x < 100) {
-    const w = 0.12 + rand() * (rand() < 0.15 ? 2.4 : 0.7);
+    const w = 0.35 + rand() * (rand() < 0.15 ? 2.4 : 0.9);
     const c = PALETTE[Math.floor(rand() * PALETTE.length)];
     stops.push(`${c} ${x.toFixed(2)}%`, `${c} ${Math.min(100, x + w).toFixed(2)}%`);
     x += w;
@@ -116,7 +116,7 @@ function generate(origin: Pt | null): Geometry {
       style = {
         background: `repeating-linear-gradient(0deg, rgba(0,0,0,.55) 0 2px, transparent 2px 6px), ${stripes(rand)}`,
       };
-    if (kind === "photo") style = { filter: `hue-rotate(${Math.floor(rand() * 360)}deg) saturate(1.6)` };
+    if (kind === "photo") style = {};
     return { clip: `polygon(${poly})`, style, kind, delay: 0.12 + rand() * 1.6, flicker: 0.08 + rand() * 0.5 };
   });
 
@@ -142,7 +142,7 @@ export default function ScreenBreak({
   onDone: () => void;
 }) {
   const [geo] = useState<Geometry>(() => generate(origin));
-  const inkRef = useRef<HTMLDivElement>(null);
+  const [ink, setInk] = useState(false);
   const [dying, setDying] = useState(false);
   const doneRef = useRef(onDone);
   useEffect(() => {
@@ -157,28 +157,8 @@ export default function ScreenBreak({
     const t3 = setTimeout(() => stopBuzz?.(), durationMs - 350);
     const t4 = setTimeout(() => doneRef.current(), durationMs);
 
-    // black ink spreading from the impact point
-    const start = performance.now();
-    const inkStart = durationMs * 0.37;
-    const inkEnd = durationMs * 0.9;
-    const maxR = Math.hypot(geo.W, geo.H);
-    let raf = 0;
-    const loop = (now: number) => {
-      const t = now - start;
-      const k = Math.min(1, Math.max(0, (t - inkStart) / (inkEnd - inkStart)));
-      const e = Math.pow(k, 2.4); // slow start, then it swallows everything
-      const el = inkRef.current;
-      if (el) {
-        const [x, y] = geo.impact;
-        const r1 = e * maxR;
-        const r2 = e * maxR * 0.8;
-        el.style.background = `radial-gradient(circle at ${x}px ${y}px, #000 ${r1}px, transparent ${r1 + 90}px),
-          radial-gradient(circle at ${x + 160}px ${y + 90}px, #000 ${r2}px, transparent ${r2 + 60}px),
-          radial-gradient(circle at ${x - 220}px ${y + 40}px, #000 ${r2 * 0.9}px, transparent ${r2 * 0.9 + 70}px)`;
-      }
-      if (t < durationMs) raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
+    // black ink spreading from the impact point (GPU-friendly: scaled circles, no repaints)
+    const raf = requestAnimationFrame(() => requestAnimationFrame(() => setInk(true)));
 
     return () => {
       [t1, t2, t3, t4].forEach(clearTimeout);
@@ -188,7 +168,7 @@ export default function ScreenBreak({
   }, [durationMs, geo]);
 
   return (
-    <div className={`${styles.root} ${dying ? styles.dying : ""}`} aria-hidden="true">
+    <div className={styles.root} aria-hidden="true">
       {/* LCD bleed in the sectors */}
       {geo.sectors.map((s, i) =>
         s.kind === "clear" ? null : (
@@ -210,7 +190,29 @@ export default function ScreenBreak({
         ),
       )}
 
-      <div ref={inkRef} className={styles.ink} />
+      {/* black ink: three blobs growing from the impact */}
+      {[
+        [0, 0, 1],
+        [160, 90, 0.8],
+        [-220, 40, 0.72],
+      ].map(([dx, dy, k], i) => {
+        const R = Math.hypot(geo.W, geo.H) * k;
+        return (
+          <div
+            key={`ink${i}`}
+            className={styles.inkBlob}
+            style={{
+              left: geo.impact[0] + dx - R,
+              top: geo.impact[1] + dy - R,
+              width: R * 2,
+              height: R * 2,
+              transform: ink ? "scale(1)" : "scale(0)",
+              transitionDuration: `${durationMs * 0.53}ms`,
+              transitionDelay: `${durationMs * 0.37}ms`,
+            }}
+          />
+        );
+      })}
 
       {/* dead pixel rows */}
       {geo.deadLines.map((l, i) => (
@@ -239,6 +241,7 @@ export default function ScreenBreak({
       </svg>
 
       <div className={styles.flash} />
+      <div className={`${styles.death} ${dying ? styles.deathOn : ""}`} />
     </div>
   );
 }

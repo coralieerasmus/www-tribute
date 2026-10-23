@@ -26,7 +26,7 @@ type ListenResult = "answered" | "timeout" | "muted" | "aborted";
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Raw mic signal: the browser's auto-gain / noise filter make speech and silence look alike. */
-const AUDIO_CONSTRAINTS = { echoCancellation: true, noiseSuppression: false, autoGainControl: false };
+const AUDIO_CONSTRAINTS = { echoCancellation: true, noiseSuppression: true, autoGainControl: false };
 
 function cameraErrorText(err: unknown) {
   const name = err instanceof DOMException ? err.name : "";
@@ -67,6 +67,7 @@ export default function ZoomCall() {
   const freezeRef = useRef<HTMLCanvasElement>(null);
   const placeholderRef = useRef(placeholder);
   const mutedRef = useRef(false);
+  const busyRef = useRef(false);
   const manualAnswerRef = useRef(false);
   const micStatusRef = useRef(mic.status);
 
@@ -76,6 +77,9 @@ export default function ZoomCall() {
   useEffect(() => {
     mutedRef.current = muted;
   }, [muted]);
+  useEffect(() => {
+    busyRef.current = mic.busy;
+  }, [mic.busy]);
   useEffect(() => {
     micStatusRef.current = mic.status;
   }, [mic.status]);
@@ -185,7 +189,9 @@ export default function ZoomCall() {
         let last = begin;
         let voiced = 0;
         let started = false;
+        let startedAt = 0;
         let lastVoice = 0;
+        let peak = 0; // the user's own voice level during this answer
 
         const finish = (r: ListenResult) => {
           clearInterval(iv);
@@ -208,19 +214,29 @@ export default function ZoomCall() {
           const micOn = micStatusRef.current === "on";
           const level = mic.levelRef.current;
           const active = micOn && !mutedRef.current;
+          const busy = busyRef.current;
           // start of speech needs the (higher) speech threshold…
           const loud = active && level > mic.thresholdRef.current;
-          // …but once they're talking, anything above the (lower) silence level still counts
-          const stillTalking = active && started && level > mic.silenceRef.current;
+          if (started) peak = Math.max(peak * 0.997, level);
+          // …once they're talking, "still talking" = near their OWN voice level, not just above the room.
+          // In a busy room the background chatter never goes quiet, so this is what ends the answer.
+          const quietLine = Math.max(mic.silenceRef.current, peak * (busy ? 0.4 : 0.25));
+          const stillTalking = active && started && level > quietLine;
           if (loud) {
             voiced += dt;
-            if (voiced >= VAD.minSpeechMs) started = true;
+            if (!started && voiced >= (busy ? VAD.minSpeechMs * 1.6 : VAD.minSpeechMs)) {
+              started = true;
+              startedAt = now;
+              peak = level;
+            }
           } else {
             voiced = Math.max(0, voiced - dt * 0.5);
           }
           if (loud || stillTalking) lastVoice = now;
 
           if (started && now - lastVoice > VAD.endSilenceMs) return finish("answered");
+          // answers are short; never let a noisy room keep the call stuck
+          if (started && now - startedAt > VAD.maxAnswerMs) return finish("answered");
           if (!started && allowMutedNudge && micOn && mutedRef.current && now - begin > 5000) return finish("muted");
           const timeout = micOn ? VAD.noAnswerTimeoutMs : VAD.noMicTimeoutMs;
           if (!started && now - begin > timeout) return finish("timeout");
@@ -752,6 +768,10 @@ export default function ZoomCall() {
                     ? "We can hear you!"
                     : "Say something: the bar should turn green."}
               </span>
+              <label className={styles.busyToggle}>
+                <input type="checkbox" checked={mic.busy} onChange={(e) => mic.setBusy(e.target.checked)} />
+                Busy room (exhibition, classroom): ignore people talking in the background
+              </label>
             </div>
             <button className={styles.audioJoin} onClick={joinAudio}>
               Join with Computer Audio

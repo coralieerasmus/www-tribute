@@ -7,7 +7,7 @@ import { BRAND, ROUTES } from "@/lib/experience";
 import { AppsIcon, ClockIcon, GoogleLogo, LensIcon, MicIcon, SUGGESTIONS, SearchIcon, isValidQuery } from "./shared";
 import styles from "./google.module.css";
 
-const TARGET = "Apple Laptops";
+const TARGET = "Apple iPhone";
 
 export default function GoogleHome() {
   const router = useRouter();

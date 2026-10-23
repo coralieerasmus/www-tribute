@@ -578,6 +578,18 @@
   width: 2px;
   background: rgba(0, 0, 0, 0.35);
 }
+.busyToggle {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 2px;
+  font-size: 12px;
+  color: #333;
+  cursor: pointer;
+}
+.busyToggle input {
+  margin-top: 2px;
+}
 .micHint {
   font-size: 12px;
   color: #777;

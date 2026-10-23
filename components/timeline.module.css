@@ -1,0 +1,161 @@
+.wrap,
+.wrap * {
+  box-sizing: border-box;
+}
+
+.wrap {
+  position: fixed;
+  left: 50%;
+  z-index: 900;
+  width: min(440px, calc(100vw - 32px));
+  padding: 8px 22px 6px;
+  transform: translateX(-50%);
+  border-radius: 14px;
+  background: rgba(12, 12, 14, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  color: #fff;
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  pointer-events: none;
+  user-select: none;
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s cubic-bezier(0.2, 0.9, 0.2, 1),
+    padding 0.5s ease;
+}
+.hidden {
+  opacity: 0;
+  transform: translateX(-50%) translateY(12px);
+}
+
+/* while time-traveling the bar grows and shows the year counter */
+.traveling {
+  transform: translateX(-50%) scale(1.12);
+  padding-top: 12px;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.caption {
+  height: 0;
+  overflow: hidden;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  transition:
+    height 0.4s ease,
+    opacity 0.4s ease;
+}
+.traveling .caption {
+  height: 30px;
+  opacity: 1;
+}
+.arrow {
+  color: #23d959;
+  margin: 0 4px;
+}
+
+.track {
+  position: relative;
+  height: 38px;
+  margin: 0 6px;
+}
+.line,
+.lineFill {
+  position: absolute;
+  top: 7px;
+  left: 0;
+  height: 2px;
+  border-radius: 1px;
+}
+.line {
+  right: 0;
+  background: rgba(255, 255, 255, 0.18);
+}
+.lineFill {
+  background: linear-gradient(90deg, #7aa7ff, #23d959);
+  transition: width 1.5s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.stop {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 3px;
+  border-radius: 50%;
+  background: #2a2a2e;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  transition:
+    background 0.4s,
+    border-color 0.4s;
+}
+.year {
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.45);
+  transition: color 0.4s;
+}
+.label {
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+.past .dot {
+  background: #7aa7ff;
+  border-color: #7aa7ff;
+}
+.past .year {
+  color: rgba(255, 255, 255, 0.7);
+}
+.current .year {
+  color: #fff;
+}
+.current .label {
+  color: rgba(255, 255, 255, 0.75);
+}
+.current .dot {
+  background: #23d959;
+  border-color: #23d959;
+}
+
+/* the glowing marker that slides between eras */
+.marker {
+  position: absolute;
+  top: 2px;
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
+  border-radius: 50%;
+  border: 2px solid #23d959;
+  box-shadow: 0 0 0 4px rgba(35, 217, 89, 0.18), 0 0 14px rgba(35, 217, 89, 0.7);
+  transition: left 1.5s cubic-bezier(0.65, 0, 0.35, 1);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+@keyframes pulse {
+  50% {
+    box-shadow: 0 0 0 7px rgba(35, 217, 89, 0.08), 0 0 20px rgba(35, 217, 89, 0.9);
+  }
+}
+
+@media (max-width: 520px) {
+  .label {
+    display: none;
+  }
+  .track {
+    height: 30px;
+  }
+}

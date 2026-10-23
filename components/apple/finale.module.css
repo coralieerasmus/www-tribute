@@ -1,0 +1,55 @@
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 800;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0);
+  transition-property: background;
+  transition-timing-function: ease;
+  pointer-events: all;
+  cursor: default;
+}
+.dark {
+  background: #000;
+}
+
+/* the phone that was in the store */
+.phoneWrap {
+  position: absolute;
+  transform-origin: 50% 50%;
+  z-index: 2;
+}
+
+/* screen unlock: feed slides up over the lock screen */
+.unlock {
+  position: absolute;
+  inset: 0;
+  transform: translateY(100%);
+  transition: transform 0.45s cubic-bezier(0.3, 0.8, 0.3, 1);
+}
+.unlocked {
+  transform: translateY(0);
+}
+
+/* the wall of screens: a 0×0 box in the centre of the viewport, scaled around its origin */
+.wall {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+  z-index: 1;
+}
+.tile {
+  position: absolute;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.tileOn {
+  opacity: 1;
+}
+/* while the screen breaks, freeze everything underneath (saves a lot of work) */
+.frozen * {
+  animation-play-state: paused !important;
+}

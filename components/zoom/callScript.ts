@@ -48,7 +48,7 @@ export const SEGMENTS: Segment[] = [
   { id: "how", start: 4, end: 9, waitForAnswer: true, text: "Okay good. Sorry for calling out of nowhere. How are you doing?" },
   { id: "what", start: 9, end: 13, waitForAnswer: true, text: "Nice, nice. So what are you up to right now?" },
   { id: "stan", start: 13, end: 18, waitForAnswer: true, text: "Oh wait, did you see that new YouTube video Stan put on his status?" },
-  { id: "laptop", start: 18, end: 23, waitForAnswer: true, text: "Okay, random question. What laptop are you on right now?" },
+  { id: "phone", start: 18, end: 23, waitForAnswer: true, text: "Okay, random question. What phone do you have right now?" },
   { id: "old", start: 23, end: 27, waitForAnswer: true, text: "Hmm. Is it, like... old?" },
 ];
 
@@ -75,7 +75,7 @@ export const LAG_SEGMENT: Segment = {
   id: "lag",
   start: 36,
   end: 44,
-  text: "Wait... you're freezing. Damn, holy lag! You should really get a new laptop. Oh sorry, I gotta go. Talk to you later!",
+  text: "Wait... you're freezing. Damn, holy lag! You should really get a new phone. Oh sorry, I gotta go. Talk to you later!",
 };
 
 /** Voice-detection tuning. */
@@ -85,6 +85,8 @@ export const VAD = {
   /** How long they must be quiet after talking before the next question plays.
    *  Lower = snappier, but people pausing mid-sentence may get cut off. */
   endSilenceMs: 700,
+  /** Once they've started talking, move on after this long even if the room never goes quiet. */
+  maxAnswerMs: 6_000,
   /** If they say nothing at all, move on after this long anyway. */
   noAnswerTimeoutMs: 7_000,
   /** Same, but when the mic is blocked/unavailable. */

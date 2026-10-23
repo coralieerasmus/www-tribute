@@ -1,0 +1,358 @@
+.phone,
+.phone * {
+  box-sizing: border-box;
+}
+
+/* ---------- the phone body ---------- */
+.phone {
+  --frame: #2b2b2d;
+  --pw: 300px;
+  position: relative;
+  width: var(--pw);
+  aspect-ratio: 9 / 18.6;
+  padding: calc(var(--pw) * 0.035);
+  border-radius: calc(var(--pw) * 0.17);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 30%, rgba(0, 0, 0, 0.25) 70%, rgba(255, 255, 255, 0.2)),
+    var(--frame);
+  box-shadow:
+    inset 0 0 0 calc(var(--pw) * 0.006) rgba(255, 255, 255, 0.35),
+    inset 0 0 0 calc(var(--pw) * 0.022) #050505,
+    0 calc(var(--pw) * 0.12) calc(var(--pw) * 0.3) rgba(0, 0, 0, 0.55);
+}
+.btn {
+  position: absolute;
+  width: calc(var(--pw) * 0.012);
+  border-radius: 2px;
+  background: var(--frame);
+  filter: brightness(0.85);
+}
+.btnAction {
+  left: calc(var(--pw) * -0.01);
+  top: 17%;
+  height: 4%;
+}
+.btnVolUp {
+  left: calc(var(--pw) * -0.01);
+  top: 24%;
+  height: 7.5%;
+}
+.btnVolDown {
+  left: calc(var(--pw) * -0.01);
+  top: 33%;
+  height: 7.5%;
+}
+.btnPower {
+  right: calc(var(--pw) * -0.01);
+  top: 26%;
+  height: 11%;
+}
+
+.screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: calc(var(--pw) * 0.14);
+  overflow: hidden;
+  background: #000;
+  container-type: size;
+  transform: translateZ(0);
+}
+.island {
+  position: absolute;
+  top: 2.2%;
+  left: 50%;
+  width: 32%;
+  height: 4.6%;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: #000;
+  z-index: 5;
+}
+
+/* cheap tiles: no shadows, no per-card animations (only the swipe) */
+.lite {
+  box-shadow: none;
+  background: var(--frame);
+}
+.lite .cardEmoji {
+  animation: none;
+  text-shadow: none;
+  will-change: auto;
+}
+.lite .cardProgress,
+.lite .ticker em {
+  animation: none;
+}
+.lite .cardProgress i {
+  animation: none;
+  transform: scaleX(0.4);
+  will-change: auto;
+}
+.lite .cardSide,
+.lite .cardOverlay {
+  text-shadow: none;
+}
+
+/* ---------- lock screen ---------- */
+.lock {
+  position: absolute;
+  inset: 0;
+  color: #fff;
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Helvetica Neue", Arial, sans-serif;
+}
+.lockDate {
+  margin-top: 19cqh;
+  font-size: 6cqw;
+  font-weight: 600;
+  opacity: 0.9;
+}
+.lockTime {
+  font-size: 30cqw;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.lockBottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4cqh;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 10cqw;
+}
+.lockIcon {
+  width: 15cqw;
+  height: 15cqw;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(8px);
+  font-size: 6cqw;
+}
+.lockHandle {
+  width: 36cqw;
+  height: 1.6cqw;
+  margin-bottom: 1cqh;
+  border-radius: 1cqw;
+  background: #fff;
+}
+
+/* ---------- feed ---------- */
+.feed {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.strip {
+  height: 700%;
+  display: flex;
+  flex-direction: column;
+  animation: swipe 6s infinite;
+}
+.strip > * {
+  flex: 1 0 0;
+}
+/* 6 videos + the first one again → seamless loop. Each video holds, then a quick swipe up. */
+@keyframes swipe {
+  0%,
+  14% {
+    transform: translateY(0);
+  }
+  16.667%,
+  30.667% {
+    transform: translateY(-14.2857%);
+  }
+  33.333%,
+  47.333% {
+    transform: translateY(-28.5714%);
+  }
+  50%,
+  64% {
+    transform: translateY(-42.8571%);
+  }
+  66.667%,
+  80.667% {
+    transform: translateY(-57.1429%);
+  }
+  83.333%,
+  97.333% {
+    transform: translateY(-71.4286%);
+  }
+  100% {
+    transform: translateY(-85.7143%);
+  }
+}
+
+/* wall tiles: 3 stacked videos, one visible at a time */
+.cycleCard {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  animation: cycle 3s steps(1) infinite;
+}
+.cycleCard > * {
+  flex: 1;
+}
+@keyframes cycle {
+  0% {
+    visibility: visible;
+  }
+  33.333%,
+  100% {
+    visibility: hidden;
+  }
+}
+
+.card {
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Arial, sans-serif;
+}
+.cardVideo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cardEmoji {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  font-size: 46cqw;
+  line-height: 1;
+  transform: translate(-50%, -50%);
+  animation: bob 0.9s ease-in-out infinite alternate;
+  will-change: transform;
+  text-shadow: 0 2cqw 3cqw rgba(0, 0, 0, 0.3);
+}
+@keyframes bob {
+  from {
+    transform: translate(-50%, -52%) rotate(-6deg) scale(1);
+  }
+  to {
+    transform: translate(-50%, -46%) rotate(6deg) scale(1.08);
+  }
+}
+.cardOverlay {
+  position: absolute;
+  top: 16%;
+  left: 6%;
+  right: 6%;
+  text-align: center;
+  font-size: 11cqw;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+  -webkit-text-stroke: 0.6cqw #000;
+  paint-order: stroke fill;
+  text-shadow: 0 0.8cqw 0 #000;
+}
+.cardNews .cardOverlay {
+  top: 10%;
+  left: 0;
+  right: auto;
+  padding: 1.5cqw 4cqw;
+  background: #d00000;
+  font-size: 8cqw;
+  -webkit-text-stroke: 0;
+  text-shadow: none;
+}
+.ticker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 27%;
+  display: flex;
+  align-items: center;
+  height: 7cqw;
+  background: rgba(255, 255, 255, 0.92);
+  color: #111;
+  font-size: 3.6cqw;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.ticker span {
+  flex-shrink: 0;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 0 2.5cqw;
+  background: #d00000;
+  color: #fff;
+}
+.ticker em {
+  font-style: normal;
+  padding-left: 2cqw;
+  animation: tick 4s linear infinite;
+  will-change: transform;
+}
+@keyframes tick {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.cardSide {
+  position: absolute;
+  right: 3cqw;
+  bottom: 22%;
+  display: flex;
+  flex-direction: column;
+  gap: 4cqw;
+  font-size: 7cqw;
+  text-align: center;
+}
+.cardSide span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.cardSide small {
+  font-size: 3cqw;
+  font-weight: 700;
+}
+.cardInfo {
+  position: absolute;
+  left: 4cqw;
+  right: 18cqw;
+  bottom: 7%;
+  display: flex;
+  flex-direction: column;
+  gap: 1cqw;
+  font-size: 3.8cqw;
+  text-shadow: 0 0.4cqw 1cqw rgba(0, 0, 0, 0.6);
+}
+.cardInfo b {
+  font-size: 4.2cqw;
+}
+.cardProgress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2.5%;
+  height: 0.8cqw;
+  background: rgba(255, 255, 255, 0.25);
+}
+.cardProgress i {
+  display: block;
+  height: 100%;
+  background: #fff;
+  transform-origin: 0 0;
+  animation: progress 1s linear infinite;
+  will-change: transform;
+}
+@keyframes progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}

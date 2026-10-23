@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "rea
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ROUTES } from "@/lib/experience";
-import { AppsIcon, GoogleLogo, LaptopThumb, LensIcon, MicIcon, isValidQuery } from "./shared";
+import { AppsIcon, GoogleLogo, LensIcon, MicIcon, PhoneThumb, isValidQuery } from "./shared";
 import styles from "./google.module.css";
 
 /* Every link on this page goes to the same place. */
@@ -16,80 +16,80 @@ const capsules = (colors: string[]) =>
     .join(", ")}), linear-gradient(#f6f6f6, #f6f6f6)`;
 
 const PRODUCTS = [
-  { title: "Apple MacBook Neo (2026) A18 Pro 256GB Blush", price: "€799.00", store: "Coolblue", ship: "Free", stars: "(6k+)", screen: capsules(["#ff4fa3", "#ff8fcf", "#ffc2e8"]) },
-  { title: "Apple 13 Inch Macbook Neo (2026) - 13 Inch, 256GB", price: "€799.00", store: "MediaMarkt", local: true, pickup: "Pick up tomorrow", stars: "(6k+)", screen: capsules(["#1e6bff", "#46b6ff", "#9be3ff"]) },
-  { title: "Macbook Pro 16\" - Intel i7 2,6GHz - 16GB Ram - Space Gray", price: "€499.00", store: "RefurbishedDirect", ship: "Free", refurb: true, screen: "linear-gradient(135deg,#0b2a6f,#1b0f3b 60%,#000)", keyboard: true },
-  { title: "Apple Macbook Air (2026) - 13 Inch M5 (10-core) 16GB", price: "€1,429.00", store: "MediaMarkt.nl", ship: "Free", stars: "(3k+)", screen: "radial-gradient(circle at 30% 70%, #4aa3ff, #0a2a7a 55%, #020a26)" },
-  { title: "Apple MacBook Pro 2020 | 13.3\" | Touch Bar", price: "€479.00", store: "refurbed.nl", ship: "Free", refurb: true, screen: "linear-gradient(120deg,#1b2a6b,#b0174a 55%,#ff5a2a)" },
-  { title: "Apple MacBook Neo (2026) A18 Pro 256GB Citrus", price: "€799.00", store: "Coolblue", local: true, pickup: "Pick up today", stars: "(6k+)", screen: capsules(["#c3e600", "#f2f200", "#7fd400"]) },
-  { title: "Samsung Galaxy Book4 Edge Copilot+ PC 15,6\"", price: "€699.00", was: "€999", store: "Coolblue.nl", ship: "Free", rating: "Store rating 4.2/5", sale: true, screen: "radial-gradient(circle at 60% 40%, #9fd3ff, #4b7bd8 60%, #2a3f8f)", base: "#c9d3e3" },
-  { title: "Apple MacBook Neo - 13 inch - Citrus - 256 GB", price: "€730.00", store: "bol.com", ship: "Free", stars: "(6k+)", screen: capsules(["#d4f000", "#a8e000", "#f5ff6a"]) },
-  { title: "Apple MacBook Air 15\" (2026) M5 Midnight 512GB", price: "€1,649.00", store: "Amac", ship: "Free", stars: "(2k+)", screen: "linear-gradient(160deg,#0d1b3d,#2c4a9b 50%,#79b4ff)" },
-  { title: "Apple MacBook Pro 14\" M5 Pro 24GB Space Black", price: "€2,399.00", store: "Coolblue", ship: "Free", stars: "(1k+)", screen: "linear-gradient(200deg,#000,#3a1a6b 50%,#ff6a3d)" },
+  { title: "Apple iPhone 17 Pro 256GB Cosmic Orange", price: "€1,329.00", store: "Coolblue", ship: "Free", stars: "(6k+)", screen: "linear-gradient(160deg,#ff8a3d,#c2410c 60%,#431407)", frame: "#d9733a", back: true },
+  { title: "Apple iPhone 17 256GB Lavender", price: "€969.00", store: "MediaMarkt", local: true, pickup: "Pick up tomorrow", stars: "(6k+)", screen: "radial-gradient(circle at 30% 30%,#e9d5ff,#a78bfa 55%,#4c1d95)", frame: "#c4b5fd" },
+  { title: "iPhone 13 128GB Midnight - Refurbished - Excellent", price: "€349.00", store: "RefurbishedDirect", ship: "Free", refurb: true, screen: "linear-gradient(160deg,#1e293b,#0f172a)", frame: "#1f2937" },
+  { title: "Apple iPhone Air 256GB Sky Blue", price: "€1,229.00", store: "MediaMarkt.nl", ship: "Free", stars: "(3k+)", screen: "radial-gradient(circle at 70% 20%,#e0f2fe,#7dd3fc 50%,#0369a1)", frame: "#bae6fd" },
+  { title: "Apple iPhone 15 128GB Black | Refurbished", price: "€479.00", store: "refurbed.nl", ship: "Free", refurb: true, screen: "linear-gradient(120deg,#1b2a6b,#b0174a 55%,#ff5a2a)", frame: "#111" },
+  { title: "Apple iPhone 17 Pro Max 512GB Deep Blue", price: "€1,749.00", store: "Coolblue", local: true, pickup: "Pick up today", stars: "(6k+)", screen: "linear-gradient(160deg,#1e3a8a,#172554)", frame: "#1e3a8a", back: true },
+  { title: "Samsung Galaxy S26 256GB Phantom Black", price: "€899.00", was: "€1,099", store: "Coolblue.nl", ship: "Free", rating: "Store rating 4.2/5", sale: true, screen: "radial-gradient(circle at 60% 40%,#9fd3ff,#4b7bd8 60%,#2a3f8f)", frame: "#2b2b2b" },
+  { title: "Apple iPhone 17 256GB Sage", price: "€949.00", store: "bol.com", ship: "Free", stars: "(6k+)", screen: "radial-gradient(circle at 30% 70%,#d9f99d,#84cc16 55%,#365314)", frame: "#bcd4a8" },
+  { title: "Apple iPhone 17e 128GB White", price: "€699.00", store: "Amac", ship: "Free", stars: "(2k+)", screen: "linear-gradient(160deg,#f1f5f9,#cbd5e1)", frame: "#e5e7eb" },
+  { title: "Apple iPhone Air 512GB Space Black", price: "€1,479.00", store: "Coolblue", ship: "Free", stars: "(1k+)", screen: "linear-gradient(200deg,#000,#3a1a6b 50%,#ff6a3d)", frame: "#111" },
 ];
 
 const RESULTS = [
   {
     site: "Apple",
-    url: "https://www.apple.com › nl › mac",
-    title: "Mac - Apple (NL)",
+    url: "https://www.apple.com › nl › iphone",
+    title: "iPhone - Apple (NL)",
     snippet: (
       <>
-        De krachtigste Mac-laptops en -desktops ooit. Met de superkracht van Apple silicon. <b>MacBook Neo</b>, <b>MacBook Air</b>,{" "}
-        <b>MacBook Pro</b>, iMac, Mac mini, Mac Studio en Mac Pro.
+        Ontdek de nieuwste <b>iPhone</b>-modellen, waaronder <b>iPhone 17 Pro</b>, <b>iPhone Air</b> en <b>iPhone 17</b>. Vergelijk modellen, bekijk
+        kleuren en kies de iPhone die bij jou past.
       </>
     ),
   },
   {
     site: "Apple",
-    url: "https://www.apple.com › macbook-pro",
+    url: "https://www.apple.com › iphone-17-pro",
     translate: true,
-    title: "MacBook Pro",
+    title: "iPhone 17 Pro",
     snippet: (
       <>
-        Vind de <b>MacBook Pro</b> met M5-, M5 Pro- of M5 Max-chip die bij jou past. Gemaakt voor AI. Tot wel 24 uur batterijduur. Liquid Retina XDR-display.
+        De krachtigste <b>iPhone</b> ooit. Pro-camerasysteem, een display dat nog helderder is en batterijduur voor de hele dag. Gemaakt voor AI.
       </>
     ),
     extra: "Free delivery · 14-day returns",
   },
   {
     site: "Coolblue",
-    url: "https://www.coolblue.nl › laptops › apple-macbooks",
-    title: "Apple MacBooks vergelijken en kopen",
-    snippet: <>Alle <b>Apple laptops</b> op een rij. Vergelijk MacBook Neo, Air en Pro en lees reviews van andere klanten. Vandaag besteld, morgen in huis.</>,
+    url: "https://www.coolblue.nl › mobiele-telefoons › apple-iphone",
+    title: "Apple iPhone vergelijken en kopen",
+    snippet: <>Alle <b>Apple iPhones</b> op een rij. Vergelijk iPhone 17, Air en Pro en lees reviews van andere klanten. Vandaag besteld, morgen in huis.</>,
     rating: "4.6 · 12,408 reviews",
   },
   {
     site: "MediaMarkt",
-    url: "https://www.mediamarkt.nl › computer › apple-macbook",
-    title: "Apple MacBook kopen? | MediaMarkt",
-    snippet: <>Bekijk ons aanbod <b>Apple laptops</b>. Haal je nieuwe MacBook vandaag nog op in een winkel bij jou in de buurt, ook in Eindhoven.</>,
+    url: "https://www.mediamarkt.nl › telefonie › apple-iphone",
+    title: "Apple iPhone kopen? | MediaMarkt",
+    snippet: <>Bekijk ons aanbod <b>Apple iPhones</b>. Haal je nieuwe iPhone vandaag nog op in een winkel bij jou in de buurt, ook in Eindhoven.</>,
   },
   {
     site: "Tweakers",
-    url: "https://tweakers.net › pricewatch › apple-laptops",
-    title: "Apple laptops - Pricewatch - Tweakers",
-    snippet: <>Vergelijk prijzen van <b>Apple laptops</b> bij tientallen webshops. Bekijk specificaties, prijsgeschiedenis en ervaringen van gebruikers.</>,
+    url: "https://tweakers.net › pricewatch › apple-iphone",
+    title: "Apple iPhone - Pricewatch - Tweakers",
+    snippet: <>Vergelijk prijzen van <b>Apple iPhones</b> bij tientallen webshops. Bekijk specificaties, prijsgeschiedenis en ervaringen van gebruikers.</>,
   },
   {
     site: "Wikipedia",
-    url: "https://en.wikipedia.org › wiki › MacBook",
-    title: "MacBook - Wikipedia",
-    snippet: <>The <b>MacBook</b> is a brand of Mac notebook computers designed and marketed by Apple that use Apple&apos;s macOS operating system.</>,
+    url: "https://en.wikipedia.org › wiki › IPhone",
+    title: "iPhone - Wikipedia",
+    snippet: <>The <b>iPhone</b> is a line of smartphones designed and marketed by Apple that use Apple&apos;s iOS mobile operating system.</>,
   },
 ];
 
 const QUESTIONS = [
-  { q: "Which Apple laptop is best for students?", a: "For most students the cheapest current model is plenty for notes, browsing and streaming. If you edit video or code a lot, an Air or Pro with more memory will last longer." },
-  { q: "Is it worth upgrading an old laptop?", a: "If your laptop struggles with video calls, takes ages to start up, or lags when you have a few tabs open, an upgrade will feel like a huge difference." },
-  { q: "What is the cheapest MacBook right now?", a: "The entry-level MacBook is the cheapest new model. Refurbished older models can be cheaper, but they get software updates for fewer years." },
-  { q: "How long does a MacBook last?", a: "Many people use a MacBook for five to seven years before it starts to feel slow, depending on how heavily it's used." },
+  { q: "Which iPhone should I buy?", a: "For most people the standard model is plenty for photos, socials and streaming. If you care about the camera or battery life, the Pro models last longer." },
+  { q: "Is it worth upgrading an old phone?", a: "If your phone lags on video calls, runs out of storage or dies before the end of the day, an upgrade will feel like a huge difference." },
+  { q: "What is the cheapest iPhone right now?", a: "The entry-level iPhone is the cheapest new model. Refurbished older models can be cheaper, but they get software updates for fewer years." },
+  { q: "How long does an iPhone last?", a: "Many people use an iPhone for four to six years before it starts to feel slow, depending on how heavily it's used." },
 ];
 
 export default function GoogleResults() {
   const params = useSearchParams();
   const router = useRouter();
-  const initial = params.get("q") ?? "apple laptops";
+  const initial = params.get("q") ?? "apple iphone";
   const [q, setQ] = useState(initial);
   const [wrong, setWrong] = useState(0);
   const [open, setOpen] = useState<number | null>(null);
@@ -190,7 +190,7 @@ export default function GoogleResults() {
                 <Link key={p.title} href={NEXT} className={styles.product}>
                   <div className={styles.productImg}>
                     {p.sale && <span className={styles.sale}>SALE</span>}
-                    <LaptopThumb screen={p.screen} base={p.base} keyboard={p.keyboard} />
+                    <PhoneThumb screen={p.screen} frame={p.frame} back={p.back} />
                   </div>
                   {p.local && <span className={styles.localTag}>⚲ Eindhoven</span>}
                   <div className={styles.productTitle}>{p.title}</div>
@@ -236,7 +236,7 @@ export default function GoogleResults() {
                     <div className={styles.paaA}>
                       <p>{x.a}</p>
                       <Link href={NEXT} className={styles.resultTitle}>
-                        Learn more about Mac laptops
+                        Learn more about iPhone
                       </Link>
                     </div>
                   )}
@@ -280,9 +280,9 @@ export default function GoogleResults() {
                 View previous updates on Google
               </Link>
               <div className={styles.sideCards}>
-                {["Back to school deals", "New: MacBook Neo in store", "Trade in your old laptop"].map((t, i) => (
+                {["Back to school deals", "New: iPhone 17 Pro in store", "Trade in your old phone"].map((t, i) => (
                   <Link key={t} href={NEXT} className={styles.sideCard}>
-                    <LaptopThumb screen={PRODUCTS[[0, 5, 2][i]].screen} keyboard={i === 2} />
+                    <PhoneThumb screen={PRODUCTS[[1, 3, 2][i]].screen} frame={PRODUCTS[[1, 3, 2][i]].frame} />
                     <span>{t}</span>
                   </Link>
                 ))}

@@ -4,20 +4,20 @@ import BrandImage from "@/components/BrandImage";
 import { BRAND } from "@/lib/experience";
 import styles from "./google.module.css";
 
-/** The user has to search for something like "apple laptops" to continue. */
+/** The user has to search for something like "apple iphone" to continue. */
 export function isValidQuery(q: string) {
   const s = q.toLowerCase().replace(/\s+/g, " ").trim();
-  return (s.includes("apple") && (s.includes("laptop") || s.includes("macbook") || s.includes("mac book"))) || s.includes("macbook");
+  return s.includes("iphone") || s.includes("i phone") || (s.includes("apple") && s.includes("phone"));
 }
 
 export const SUGGESTIONS = [
-  "apple laptops",
-  "apple laptop price",
-  "apple laptops for students",
-  "apple laptop neo",
-  "apple laptops refurbished",
-  "apple laptop vs windows laptop",
-  "apple laptop deals eindhoven",
+  "apple iphone",
+  "apple iphone 17 pro",
+  "apple iphone price",
+  "apple iphone air",
+  "apple iphone refurbished",
+  "apple iphone vs samsung",
+  "apple iphone deals eindhoven",
 ];
 
 export function GoogleLogo({ small }: { small?: boolean }) {
@@ -73,6 +73,25 @@ export function ClockIcon() {
       <circle cx="12" cy="12" r="8.5" fill="none" stroke="#9aa0a6" strokeWidth="2" />
       <path d="M12 7v5.5l3.5 2" fill="none" stroke="#9aa0a6" strokeWidth="2" />
     </svg>
+  );
+}
+
+/** Generic phone thumbnail drawn in CSS (no product photos needed). */
+export function PhoneThumb({ screen, frame = "#1d1d1f", back }: { screen: string; frame?: string; back?: boolean }) {
+  return (
+    <div className={styles.phoneThumb} style={{ background: frame }}>
+      {back ? (
+        <div className={styles.phoneCams}>
+          <span />
+          <span />
+          <span />
+        </div>
+      ) : (
+        <div className={styles.phoneScreen} style={{ background: screen }}>
+          <span className={styles.phoneIsland} />
+        </div>
+      )}
+    </div>
   );
 }
 
