@@ -75,7 +75,7 @@ export const LAG_SEGMENT: Segment = {
   id: "lag",
   start: 36,
   end: 44,
-  text: "Wait... you're freezing. Damn, holy lag! You should really get a new phone. Oh sorry, I gotta go. Talk to you later!",
+  text: "Wait... you're freezing. Ugh, this call is so laggy. Next time just call me from your phone... oh wait, that thing is ancient too. You really need a new phone! Sorry, I gotta go. Talk later!",
 };
 
 /** Voice-detection tuning. */

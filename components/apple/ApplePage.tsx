@@ -5,11 +5,21 @@ import { useRouter } from "next/navigation";
 import BrandImage from "@/components/BrandImage";
 import { BRAND, ROUTES, TIMINGS } from "@/lib/experience";
 import { unlockAudio } from "@/lib/sounds";
-import BrainrotFinale from "./BrainrotFinale";
+import BrainrotFinale, { type FinaleStage } from "./BrainrotFinale";
+import { finaleLayout } from "./finaleLayout";
 import { LockScreen, PhoneFrame } from "./Phone";
+import PhoneScene, { type PhoneMode, type PhoneModel } from "./PhoneScene";
 import styles from "./apple.module.css";
 
-type Finish = { name: string; frame: string; wallpaper: string };
+type Finish = {
+  name: string;
+  /** colour of the CSS phone frame + swatch */
+  frame: string;
+  /** recolour for the 3D model (null = the model's own colour) */
+  tint: string | null;
+  /** lock-screen wallpaper colours */
+  colors: [string, string, string];
+};
 type Model = {
   id: string;
   name: string;
@@ -20,27 +30,11 @@ type Model = {
   camera: string;
   battery: string;
   build: string;
+  three: PhoneModel;
   finishes: Finish[];
 };
 
 const MODELS: Model[] = [
-  {
-    id: "17",
-    name: "iPhone 17",
-    tagline: "Magichromatic. Brighter than ever.",
-    price: 969,
-    chip: "A19 chip",
-    display: "6.3-inch Super Retina XDR, 120Hz",
-    camera: "48MP Dual Fusion camera",
-    battery: "Up to 30 hours video playback",
-    build: "Aluminium design, Ceramic Shield 2",
-    finishes: [
-      { name: "Lavender", frame: "#c9b8e8", wallpaper: "radial-gradient(circle at 30% 20%,#f3e8ff,#a78bfa 45%,#4c1d95)" },
-      { name: "Sage", frame: "#b9cfa3", wallpaper: "radial-gradient(circle at 30% 20%,#ecfccb,#84cc16 45%,#365314)" },
-      { name: "Mist Blue", frame: "#a9c2dc", wallpaper: "radial-gradient(circle at 30% 20%,#e0f2fe,#60a5fa 45%,#1e3a8a)" },
-      { name: "Black", frame: "#2b2b2d", wallpaper: "radial-gradient(circle at 30% 20%,#525252,#171717 60%,#000)" },
-    ],
-  },
   {
     id: "air",
     name: "iPhone Air",
@@ -51,11 +45,16 @@ const MODELS: Model[] = [
     camera: "48MP Fusion camera",
     battery: "Up to 27 hours video playback",
     build: "Titanium design, 5.6 mm thin",
+    three: {
+      url: "/models/iphone-air.glb",
+      screenMaterial: "17Air_Screen",
+      bodyMaterials: ["17Air_color1", "17Air_color2", "17Air_color3"],
+    },
     finishes: [
-      { name: "Sky Blue", frame: "#cfe3f3", wallpaper: "radial-gradient(circle at 70% 20%,#f0f9ff,#7dd3fc 45%,#0369a1)" },
-      { name: "Light Gold", frame: "#ecdcbf", wallpaper: "radial-gradient(circle at 70% 20%,#fffbeb,#fbbf24 45%,#78350f)" },
-      { name: "Cloud White", frame: "#efefec", wallpaper: "radial-gradient(circle at 70% 20%,#ffffff,#d4d4d8 50%,#52525b)" },
-      { name: "Space Black", frame: "#1d1d1f", wallpaper: "radial-gradient(circle at 70% 20%,#3f3f46,#09090b 60%)" },
+      { name: "Sky Blue", frame: "#cfe3f3", tint: null, colors: ["#f0f9ff", "#7dd3fc", "#0369a1"] },
+      { name: "Light Gold", frame: "#ecdcbf", tint: "#f2e2c4", colors: ["#fffbeb", "#fbbf24", "#78350f"] },
+      { name: "Cloud White", frame: "#efefec", tint: "#f4f4f2", colors: ["#ffffff", "#d4d4d8", "#52525b"] },
+      { name: "Space Black", frame: "#1d1d1f", tint: "#2a2a2c", colors: ["#3f3f46", "#18181b", "#09090b"] },
     ],
   },
   {
@@ -68,13 +67,41 @@ const MODELS: Model[] = [
     camera: "Pro Fusion camera system, 3 × 48MP",
     battery: "Up to 33 hours video playback",
     build: "Forged aluminium unibody",
+    three: {
+      url: "/models/iphone-17-pro.glb",
+      screenMaterial: "Screen_BG",
+      bodyMaterials: ["Material.004", "Material.002"],
+    },
     finishes: [
-      { name: "Cosmic Orange", frame: "#e07a3a", wallpaper: "radial-gradient(circle at 50% 15%,#ffedd5,#fb923c 40%,#7c2d12)" },
-      { name: "Deep Blue", frame: "#2f3d5c", wallpaper: "radial-gradient(circle at 50% 15%,#c7d2fe,#3b5bdb 40%,#0b1437)" },
-      { name: "Silver", frame: "#dcdcdc", wallpaper: "radial-gradient(circle at 50% 15%,#ffffff,#a1a1aa 45%,#27272a)" },
+      { name: "Deep Blue", frame: "#4f7f8c", tint: null, colors: ["#c7d2fe", "#3b5bdb", "#0b1437"] },
+      { name: "Cosmic Orange", frame: "#e07a3a", tint: "#e0763a", colors: ["#ffedd5", "#fb923c", "#7c2d12"] },
+      { name: "Silver", frame: "#dcdcdc", tint: "#d9d9db", colors: ["#ffffff", "#a1a1aa", "#27272a"] },
+    ],
+  },
+  {
+    id: "pro-max",
+    name: "iPhone 17 Pro Max",
+    tagline: "The biggest Pro display. The longest battery life ever.",
+    price: 1479,
+    chip: "A19 Pro chip with vapour chamber cooling",
+    display: "6.9-inch Super Retina XDR with ProMotion",
+    camera: "Pro Fusion camera system, 3 × 48MP, 8× optical zoom",
+    battery: "Up to 39 hours video playback",
+    build: "Forged aluminium unibody",
+    three: {
+      url: "/models/iphone-17-pro-max.glb",
+      screenMaterial: "screen.001",
+      bodyMaterials: ["basecolor.001", "metalframe.002", "backpanel.001", "Material.005"],
+    },
+    finishes: [
+      { name: "Cosmic Orange", frame: "#e07a3a", tint: null, colors: ["#ffedd5", "#fb923c", "#7c2d12"] },
+      { name: "Deep Blue", frame: "#2f3d5c", tint: "#33496f", colors: ["#c7d2fe", "#3b5bdb", "#0b1437"] },
+      { name: "Silver", frame: "#dcdcdc", tint: "#d6d6d8", colors: ["#ffffff", "#a1a1aa", "#27272a"] },
     ],
   },
 ];
+
+const wallpaperCss = (c: [string, string, string]) => `radial-gradient(circle at 35% 20%, ${c[0]}, ${c[1]} 45%, ${c[2]})`;
 
 const HIGHLIGHTS = [
   { kicker: "Camera", title: "Every moment, ready for your feed.", bg: "linear-gradient(160deg,#4a1a05,#000 70%)" },
@@ -97,6 +124,9 @@ export default function ApplePage() {
   const [finale, setFinale] = useState<DOMRect | null | false>(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [pageGone, setPageGone] = useState(false);
+  const [phone3D, setPhone3D] = useState<"loading" | "ready" | "error">("loading");
+  const [stage, setStage] = useState<FinaleStage | null>(null);
+  const [layout, setLayout] = useState<ReturnType<typeof finaleLayout> | null>(null);
 
   const phoneRef = useRef<HTMLDivElement>(null);
   const detailsRef = useRef<HTMLElement>(null);
@@ -111,6 +141,7 @@ export default function ApplePage() {
     router.prefetch(ROUTES.landing);
     const t = setTimeout(() => {
       setBagOpen(false);
+      setLayout(finaleLayout(window.innerWidth, window.innerHeight));
       setFinale(phoneRef.current?.getBoundingClientRect() ?? null);
     }, TIMINGS.storeMs);
     // once the store has faded out, stop rendering it (keeps the finale smooth)
@@ -159,6 +190,13 @@ export default function ApplePage() {
   const onFinaleDone = useCallback(() => router.replace(ROUTES.landing), [router]);
 
   const inFinale = finale !== false;
+  const phoneMode: PhoneMode = !inFinale
+    ? "store"
+    : stage === "zoom"
+      ? "shrink"
+      : stage === "glitch" || stage === "rewind"
+        ? "hidden"
+        : "center";
 
   return (
     <>
@@ -230,17 +268,21 @@ export default function ApplePage() {
 
           <div className={styles.stage}>
             <div className={styles.glow} />
-            <div
-              className={styles.phoneTilt}
-              style={{
-                transform: `rotateY(${tilt.x * 14 + spin}deg) rotateX(${-tilt.y * 8}deg)`,
-                opacity: inFinale ? 0 : 1,
-              }}
-            >
-              <div ref={phoneRef} className={styles.phoneFloat}>
-                <PhoneFrame frame={finish.frame} style={{ "--pw": "clamp(150px, min(21vw, calc((100vh - 400px) / 2.07)), 290px)" } as CSSProperties}>
-                  <LockScreen wallpaper={finish.wallpaper} />
-                </PhoneFrame>
+            {/* this box marks where the phone goes; the 3D phone is drawn exactly on top of it */}
+            <div ref={phoneRef} className={styles.phoneAnchor}>
+              <div
+                className={styles.phoneTilt}
+                style={{
+                  transform: `rotateY(${tilt.x * 14 + spin}deg) rotateX(${-tilt.y * 8}deg)`,
+                  // the CSS phone is only a stand-in while the 3D model loads (or if it fails)
+                  opacity: inFinale || phone3D === "ready" ? 0 : 1,
+                }}
+              >
+                <div className={styles.phoneFloat}>
+                  <PhoneFrame frame={finish.frame} style={{ "--pw": "clamp(150px, min(21vw, calc((100vh - 400px) / 2.07)), 290px)" } as CSSProperties}>
+                    <LockScreen wallpaper={wallpaperCss(finish.colors)} />
+                  </PhoneFrame>
+                </div>
               </div>
             </div>
           </div>
@@ -384,7 +426,33 @@ export default function ApplePage() {
       </div>
 
       {/* rendered outside the page so the fading page can't affect it */}
-      {inFinale && <BrainrotFinale from={finale || null} frame={finish.frame} wallpaper={finish.wallpaper} onDone={onFinaleDone} />}
+      {/* the 3D phone: in the store it follows the box above, in the finale it takes over the screen */}
+      {phone3D !== "error" && (
+        <PhoneScene
+          model={model.three}
+          tint={finish.tint}
+          wallpaper={finish.colors}
+          anchor={phoneRef}
+          mode={phoneMode}
+          feed={stage === "solo" || stage === "zoom"}
+          centerHeight={layout?.phoneH ?? 600}
+          shrinkHeight={layout ? layout.tileH * layout.outlook : 100}
+          shrinkMs={TIMINGS.finaleZoomMs}
+          zIndex={inFinale ? 850 : 40}
+          onStatus={setPhone3D}
+        />
+      )}
+
+      {inFinale && (
+        <BrainrotFinale
+          from={finale || null}
+          frame={finish.frame}
+          wallpaper={wallpaperCss(finish.colors)}
+          use3D={phone3D === "ready"}
+          onStage={setStage}
+          onDone={onFinaleDone}
+        />
+      )}
     </>
   );
 }

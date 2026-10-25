@@ -43,6 +43,7 @@ export default function Timeline({
   const [traveling, setTraveling] = useState(false);
   const [visible, setVisible] = useState(true);
   const yearRef = useRef<HTMLSpanElement>(null);
+  const travelId = useRef(0);
 
   const current = indexOf(era);
 
@@ -62,7 +63,9 @@ export default function Timeline({
     const target = ERAS[toIdx].year;
     const start = performance.now();
     const dur = 1500;
+    const id = ++travelId.current; // a newer trip cancels this one
     const tick = (now: number) => {
+      if (id !== travelId.current) return;
       const k = Math.min(1, (now - start) / dur);
       const e = 1 - Math.pow(1 - k, 3);
       if (yearRef.current) {
@@ -73,7 +76,9 @@ export default function Timeline({
       if (k < 1) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
-    setTimeout(() => setTraveling(false), 3200);
+    setTimeout(() => {
+      if (id === travelId.current) setTraveling(false);
+    }, 3200);
   };
 
   /* on arrival: travel from the era of the previous page */

@@ -57,12 +57,15 @@ export function LockScreen({ wallpaper }: { wallpaper: string }) {
   );
 }
 
-/** One fake short-form video. */
-export function FeedCard({ item, withVideo }: { item: FeedItem; withVideo?: boolean }) {
+/** One short-form video: a real clip, a still from it, or a drawn fake. */
+export function FeedCard({ item, withVideo, still = 0 }: { item: FeedItem; withVideo?: boolean; still?: number }) {
   return (
     <div className={`${styles.card} ${item.kind === "politics" ? styles.cardNews : ""}`} style={{ background: item.bg }}>
       {withVideo && item.video ? (
-        <video className={styles.cardVideo} src={item.video} autoPlay muted loop playsInline />
+        <video className={styles.cardVideo} src={item.video} autoPlay muted loop playsInline preload="auto" />
+      ) : item.stills?.length ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className={styles.cardVideo} src={item.stills[still % item.stills.length]} alt="" loading="lazy" decoding="async" />
       ) : (
         <div className={styles.cardEmoji}>{item.emoji}</div>
       )}
@@ -104,7 +107,7 @@ export function FeedCycle({ offset, secondsPerVideo = 1, delay = 0 }: { offset: 
           className={styles.cycleCard}
           style={{ animationDuration: `${dur}s`, animationDelay: `${-delay - (i * dur) / 3}s` }}
         >
-          <FeedCard item={it} />
+          <FeedCard item={it} still={offset + i} />
         </div>
       ))}
     </div>

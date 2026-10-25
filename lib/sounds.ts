@@ -190,6 +190,72 @@ export function startBuzz(volume = 0.12): () => void {
   };
 }
 
+/** VHS tape rewinding: a rising whine + hiss + wobble. Returns stop(). */
+export function startRewind(durationMs: number): () => void {
+  const c = getAudioContext();
+  if (!c) return () => {};
+  void c.resume();
+  const t = c.currentTime;
+  const end = t + durationMs / 1000;
+  const out = c.createGain();
+  out.gain.setValueAtTime(0, t);
+  out.gain.linearRampToValueAtTime(0.16, t + 0.3);
+  out.gain.setValueAtTime(0.16, end - 0.4);
+  out.gain.linearRampToValueAtTime(0, end);
+  out.connect(c.destination);
+
+  const whine = c.createOscillator();
+  whine.type = "sawtooth";
+  whine.frequency.setValueAtTime(180, t);
+  whine.frequency.exponentialRampToValueAtTime(1400, end);
+  const wobble = c.createOscillator();
+  wobble.frequency.value = 7;
+  const wobbleGain = c.createGain();
+  wobbleGain.gain.value = 30;
+  wobble.connect(wobbleGain).connect(whine.frequency);
+  const lp = c.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 2200;
+  const wg = c.createGain();
+  wg.gain.value = 0.35;
+  whine.connect(lp).connect(wg).connect(out);
+
+  const hiss = c.createBufferSource();
+  hiss.buffer = noiseBuffer(c, 2);
+  hiss.loop = true;
+  const bp = c.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.value = 3500;
+  bp.Q.value = 0.6;
+  const hg = c.createGain();
+  hg.gain.value = 0.5;
+  hiss.connect(bp).connect(hg).connect(out);
+
+  whine.start(t);
+  wobble.start(t);
+  hiss.start(t);
+  const stopAt = end + 0.05;
+  whine.stop(stopAt);
+  wobble.stop(stopAt);
+  hiss.stop(stopAt);
+
+  return () => {
+    const now = c.currentTime;
+    out.gain.cancelScheduledValues(now);
+    out.gain.setTargetAtTime(0, now, 0.03);
+    setTimeout(() => {
+      try {
+        whine.stop();
+        wobble.stop();
+        hiss.stop();
+      } catch {
+        /* already stopped */
+      }
+      out.disconnect();
+    }, 200);
+  };
+}
+
 /** Short digital "chirp" used for lag dropouts in the call. */
 export function playDropout() {
   const c = getAudioContext();

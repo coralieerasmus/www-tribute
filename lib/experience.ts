@@ -30,11 +30,13 @@ export const TIMINGS = {
   /** The store fades away until only the phone is left. */
   finaleFadeMs: 1_200,
   /** Only the phone, swiping through the feed. */
-  finaleSoloMs: 4_500,
+  finaleSoloMs: 5_500,
   /** The phone flies away and the wall of screens appears. */
-  finaleZoomMs: 6_000,
-  /** The final screen break / glitch before going back to the landing page. */
-  screenBreakMs: 3_000,
+  finaleZoomMs: 5_000,
+  /** The wall cracks / glitches. */
+  finaleGlitchMs: 1_600,
+  /** Rewinding back in time through a tunnel of screens, then back to the landing page. */
+  rewindMs: 7_000,
 } as const;
 
 /** The person "calling" the user. Used in the invite popup and the call. */

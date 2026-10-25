@@ -204,6 +204,10 @@
     transform: translate(-50%, -50%) scale(1.04);
   }
 }
+.phoneAnchor {
+  position: relative;
+  display: inline-block;
+}
 .phoneTilt {
   transform-style: preserve-3d;
   transition:
