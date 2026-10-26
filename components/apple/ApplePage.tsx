@@ -48,6 +48,7 @@ const MODELS: Model[] = [
     three: {
       url: "/models/iphone-air.glb",
       screenMaterial: "17Air_Screen",
+      bezelMaterials: ["17Air_Black"],
       bodyMaterials: ["17Air_color1", "17Air_color2", "17Air_color3"],
     },
     finishes: [
@@ -70,6 +71,7 @@ const MODELS: Model[] = [
     three: {
       url: "/models/iphone-17-pro.glb",
       screenMaterial: "Screen_BG",
+      bezelMaterials: ["Screen_Rim"],
       bodyMaterials: ["Material.004", "Material.002"],
     },
     finishes: [
@@ -91,7 +93,9 @@ const MODELS: Model[] = [
     three: {
       url: "/models/iphone-17-pro-max.glb",
       screenMaterial: "screen.001",
+      bezelMaterials: ["black.002"],
       bodyMaterials: ["basecolor.001", "metalframe.002", "backpanel.001", "Material.005"],
+      bezel: 0.04,
     },
     finishes: [
       { name: "Cosmic Orange", frame: "#e07a3a", tint: null, colors: ["#ffedd5", "#fb923c", "#7c2d12"] },
@@ -152,9 +156,17 @@ export default function ApplePage() {
     };
   }, [router]);
 
+  // the CSS stand-in phone tilts with the mouse (the 3D phone does this itself,
+  // so once it's ready we stop re-rendering the page on every mouse move)
+  const needTilt = useRef(true);
   useEffect(() => {
-    const onMove = (e: PointerEvent) =>
-      setTilt({ x: (e.clientX / window.innerWidth) * 2 - 1, y: (e.clientY / window.innerHeight) * 2 - 1 });
+    needTilt.current = phone3D !== "ready";
+  }, [phone3D]);
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (needTilt.current) setTilt({ x: (e.clientX / window.innerWidth) * 2 - 1, y: (e.clientY / window.innerHeight) * 2 - 1 });
+    };
     const onScroll = () => setScrolled(window.scrollY > 20);
     const unlock = () => unlockAudio();
     window.addEventListener("pointermove", onMove);
@@ -439,6 +451,7 @@ export default function ApplePage() {
           shrinkHeight={layout ? layout.tileH * layout.outlook : 100}
           shrinkMs={TIMINGS.finaleZoomMs}
           zIndex={inFinale ? 850 : 40}
+          preload={MODELS.map((m) => m.three)}
           onStatus={setPhone3D}
         />
       )}

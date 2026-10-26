@@ -14,6 +14,9 @@ import styles from "./timeline.module.css";
  * `setTimelineVisible()` (used by the brainrot finale).
  */
 
+/** The bar is switched off for now. Set this to true to bring it back. */
+const SHOW_TIMELINE = false;
+
 const STORAGE_KEY = "tribute-era";
 const ERA_EVENT = "tribute:era";
 const VIS_EVENT = "tribute:timeline-visible";
@@ -119,6 +122,8 @@ export default function Timeline({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  if (!SHOW_TIMELINE) return null;
 
   const pct = (i: number) => (ERAS.length > 1 ? (i / (ERAS.length - 1)) * 100 : 0);
 

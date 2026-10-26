@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { playShatter, startBuzz } from "@/lib/sounds";
+import { playRupture, startHum } from "@/lib/sounds";
 import styles from "./screenBreak.module.css";
 
 /**
  * Full-screen "your display just broke" simulation.
- *  0.0s  impact: flash, cracks shoot out from the impact point, glass sound
+ *  0.0s  impact: flash, cracks shoot out from the impact point, deep rupture sound
  *  0.2s  sectors between the cracks start bleeding LCD stripes / dead colours
  *  2.6s  black ink spreads out from the impact
  *  ~end  everything dies to black, then `onDone()` is called
@@ -150,9 +150,9 @@ export default function ScreenBreak({
   }, [onDone]);
 
   useEffect(() => {
-    playShatter();
+    playRupture();
     let stopBuzz: (() => void) | null = null;
-    const t1 = setTimeout(() => (stopBuzz = startBuzz(0.14)), 250);
+    const t1 = setTimeout(() => (stopBuzz = startHum(0.06)), 250);
     const t2 = setTimeout(() => setDying(true), durationMs - 900);
     const t3 = setTimeout(() => stopBuzz?.(), durationMs - 350);
     const t4 = setTimeout(() => doneRef.current(), durationMs);

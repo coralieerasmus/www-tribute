@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { TIMINGS } from "@/lib/experience";
-import { startBuzz } from "@/lib/sounds";
+import { startSwell } from "@/lib/sounds";
 import { setTimelineEra, setTimelineVisible } from "@/components/Timeline";
 import { FeedCycle, FeedStrip, LockScreen, PhoneFrame } from "./Phone";
 import { ZOOM_EASE_CSS, finaleLayout } from "./finaleLayout";
@@ -16,7 +16,7 @@ import styles from "./finale.module.css";
  *  2. solo   – the phone plays your brainrot clips
  *  3. zoom   – the camera pulls back: the phone becomes one screen in an endless wall of screens
  *  4. glitch – the wall cracks and the display dies
- *  5. rewind – VHS rewind down a corridor of screens, back through 2025, 2020, 2012… to the start
+ *  5. rewind – a flight back through a corridor of screens: 2026 → 2020 → 2012 → 2005 → the 90s
  *
  * With `use3D` the phone itself is the three.js model (PhoneScene, driven by the
  * parent through `onStage`). Without it, a CSS phone is used.
@@ -105,10 +105,10 @@ export default function BrainrotFinale({
     return () => t.forEach(clearTimeout);
   }, []);
 
-  /* a rising hum while the wall appears */
+  /* a deep swell while the camera pulls back and the wall appears */
   useEffect(() => {
     if (stage !== "zoom") return;
-    return startBuzz(0.05);
+    return startSwell(TIMINGS.finaleZoomMs);
   }, [stage]);
 
   /* CSS phone (only without 3D) */

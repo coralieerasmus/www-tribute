@@ -35,8 +35,8 @@ export const TIMINGS = {
   finaleZoomMs: 5_000,
   /** The wall cracks / glitches. */
   finaleGlitchMs: 1_600,
-  /** Rewinding back in time through a tunnel of screens, then back to the landing page. */
-  rewindMs: 7_000,
+  /** Travelling back in time (2026 → the 90s) through a corridor of screens, then back to the landing page. */
+  rewindMs: 10_000,
 } as const;
 
 /** The person "calling" the user. Used in the invite popup and the call. */

@@ -24,6 +24,10 @@ export type PhoneModel = {
   screenMaterial: string;
   /** materials that get recoloured by the colour swatches */
   bodyMaterials: string[];
+  /** materials of the black border around the display (forced to glossy black) */
+  bezelMaterials?: string[];
+  /** black border drawn around the screen picture (fraction of the screen width), for models without a bezel */
+  bezel?: number;
 };
 
 export type PhoneMode = "store" | "center" | "shrink" | "hidden";
@@ -44,6 +48,8 @@ type Props = {
   shrinkHeight: number;
   shrinkMs: number;
   zIndex: number;
+  /** other models to load in the background, so switching is instant */
+  preload?: PhoneModel[];
   onStatus?: (s: "loading" | "ready" | "error") => void;
 };
 
@@ -117,6 +123,20 @@ export default function PhoneScene(props: Props) {
         screenTex.colorSpace = THREE.SRGBColorSpace;
         screenTex.anisotropy = 4;
 
+        const drawBezel = () => {
+          const b = propsRef.current.model.bezel ?? 0;
+          if (!b) return;
+          const w = b * CANVAS_W;
+          const r = CANVAS_W * 0.13;
+          g.save();
+          g.beginPath();
+          g.rect(0, 0, CANVAS_W, CANVAS_H);
+          g.roundRect(w, w, CANVAS_W - 2 * w, CANVAS_H - 2 * w, r);
+          g.fillStyle = "#000";
+          g.fill("evenodd");
+          g.restore();
+        };
+
         let lockKey = "";
         const drawLock = (wp: [string, string, string]) => {
           const grad = g.createRadialGradient(CANVAS_W * 0.35, CANVAS_H * 0.2, 10, CANVAS_W * 0.5, CANVAS_H * 0.5, CANVAS_H * 0.75);
@@ -134,6 +154,7 @@ export default function PhoneScene(props: Props) {
           g.fillText("9:41", CANVAS_W / 2, CANVAS_H * 0.2 + 175);
           g.fillStyle = "#fff";
           g.fillRect(CANVAS_W / 2 - 95, CANVAS_H - 40, 190, 9);
+          drawBezel();
           screenTex.needsUpdate = true;
         };
 
@@ -154,9 +175,10 @@ export default function PhoneScene(props: Props) {
           });
           videos.slice(0, 2).forEach((v) => void v.play().catch(() => {}));
         };
+        let feedVolume = 0.9;
         const playWithSound = (v: HTMLVideoElement) => {
           v.muted = false;
-          v.volume = 0.9;
+          v.volume = feedVolume;
           v.play().catch(() => {
             v.muted = true;
             void v.play().catch(() => {});
@@ -234,6 +256,7 @@ export default function PhoneScene(props: Props) {
           g.fillRect(0, CANVAS_H - 30, CANVAS_W, 5);
           g.fillStyle = "#fff";
           g.fillRect(0, CANVAS_H - 30, CANVAS_W * p, 5);
+          drawBezel();
           screenTex.needsUpdate = true;
         };
 
@@ -313,16 +336,39 @@ export default function PhoneScene(props: Props) {
             }
             geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
             mesh.geometry = geo;
-            mesh.material = new THREE.MeshBasicMaterial({ map: screenTex, toneMapped: false });
+            // DoubleSide: some models have the screen's faces pointing inwards
+            mesh.material = new THREE.MeshBasicMaterial({ map: screenTex, toneMapped: false, side: THREE.DoubleSide });
+            mesh.renderOrder = 1;
           });
 
-          // 5) body colour
+          // 4b) hide the cover glass in front of the screen (it washes the screen out and flickers)
+          const scrArea = s2.x * s2.y;
+          const scrFront = scrBox.max.z;
+          const mb = new THREE.Box3();
+          raw.traverse((o) => {
+            const mesh = o as T.Mesh;
+            if (!mesh.isMesh || screens.includes(mesh)) return;
+            mb.setFromObject(mesh);
+            const ms = mb.getSize(new THREE.Vector3());
+            const ix = Math.max(0, Math.min(mb.max.x, scrBox.max.x) - Math.max(mb.min.x, scrBox.min.x));
+            const iy = Math.max(0, Math.min(mb.max.y, scrBox.max.y) - Math.max(mb.min.y, scrBox.min.y));
+            const coversScreen = (ix * iy) / scrArea > 0.8;
+            const thin = ms.z < s2.y * 0.03;
+            const inFront = mb.max.z > scrFront && (mb.min.z + mb.max.z) / 2 >= (scrBox.min.z + scrBox.max.z) / 2;
+            const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+            const seeThrough = mats.some((mt) => mt.transparent || mt.opacity < 1);
+            if (coversScreen && ((thin && inFront) || (seeThrough && mb.max.z > scrFront))) mesh.visible = false;
+          });
+
+          // 5) body colour + a truly black bezel
+          const bezelMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
           const body: { mat: T.MeshStandardMaterial; orig: T.Color }[] = [];
           raw.traverse((o) => {
             const mesh = o as T.Mesh;
             if (!mesh.isMesh || screens.includes(mesh)) return;
             const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
             const next = mats.map((mt) => {
+              if (m.bezelMaterials?.includes(mt.name)) return bezelMat;
               if (!m.bodyMaterials.includes(mt.name)) return mt;
               const c = (mt as T.MeshStandardMaterial).clone();
               body.push({ mat: c, orig: c.color.clone() });
@@ -341,36 +387,76 @@ export default function PhoneScene(props: Props) {
           return cache.get(m.url)!;
         };
 
-        /* ---------- swapping models ---------- */
+        let lastTint: string | null | undefined;
+
+        /* ---------- swapping models ----------
+         * Like a turntable: when you pick another model, the phone turns
+         * smoothly; halfway through the first quarter turn (when it's edge-on
+         * and you can't see it) the new model takes its place and finishes the turn.
+         * The turn only starts once the new model is loaded, so it never stutters. */
+        const TURN_MS = 1500;
         let shown: Prepared | null = null;
         let shownUrl = "";
-        let loadingUrl = "";
-        let spinStart = -1;
         let firstReady = false;
-        const syncModel = () => {
-          const m = propsRef.current.model;
-          if (m.url === shownUrl || m.url === loadingUrl) return;
-          loadingUrl = m.url;
+        let failed = false;
+        const ready = new Map<string, Prepared>();
+        let turn: { start: number; swapped: boolean } | null = null;
+
+        const load = (m: PhoneModel) => {
           get(m)
-            .then((p) => {
-              if (disposed || propsRef.current.model.url !== m.url) return;
-              if (shown) pivot.remove(shown.root);
-              pivot.add(p.root);
-              shown = p;
-              shownUrl = m.url;
-              loadingUrl = "";
-              p.setTint(propsRef.current.tint);
-              if (firstReady) spinStart = performance.now();
-              if (!firstReady) {
-                firstReady = true;
-                propsRef.current.onStatus?.("ready");
-              }
-            })
+            .then((p) => ready.set(m.url, p))
             .catch((err) => {
               console.error("PhoneScene: could not load", m.url, err);
-              loadingUrl = "";
-              if (!firstReady) propsRef.current.onStatus?.("error");
+              if (!firstReady && !failed) {
+                failed = true;
+                propsRef.current.onStatus?.("error");
+              }
             });
+        };
+        const show = (url: string) => {
+          const p = ready.get(url)!;
+          if (shown) pivot.remove(shown.root);
+          pivot.add(p.root);
+          shown = p;
+          shownUrl = url;
+          p.setTint(propsRef.current.tint);
+          lastTint = propsRef.current.tint;
+        };
+
+        /** returns the extra rotation (radians) for this frame */
+        const syncModel = (now: number) => {
+          const m = propsRef.current.model;
+          if (!ready.has(m.url)) {
+            if (!cache.has(m.url)) load(m);
+          }
+
+          // very first model: just show it
+          if (!firstReady) {
+            if (ready.has(m.url)) {
+              show(m.url);
+              firstReady = true;
+              propsRef.current.onStatus?.("ready");
+              // warm up the other models one by one, so switching is instant
+              (propsRef.current.preload ?? []).reduce<Promise<unknown>>(
+                (chain, pm) => chain.then(() => get(pm).then((p) => ready.set(pm.url, p)).catch(() => {})),
+                Promise.resolve(),
+              );
+            }
+            return 0;
+          }
+
+          if (!turn && m.url !== shownUrl && ready.has(m.url)) turn = { start: now, swapped: false };
+          if (!turn) return 0;
+
+          const k = Math.min(1, (now - turn.start) / TURN_MS);
+          const angle = Math.PI * 2 * ((1 - Math.cos(Math.PI * k)) / 2); // smooth start and stop
+          if (!turn.swapped && angle >= Math.PI / 2) {
+            const want = propsRef.current.model.url;
+            if (ready.has(want) && want !== shownUrl) show(want);
+            turn.swapped = true;
+          }
+          if (k >= 1) turn = null;
+          return angle;
         };
 
         /* ---------- interaction ---------- */
@@ -398,7 +484,6 @@ export default function PhoneScene(props: Props) {
         let lastMode: PhoneMode | null = null;
         let shrinkStart = 0;
         let shrinkFrom = 0;
-        let lastTint: string | null | undefined;
         let wasFeed = false;
         let raf = 0;
         let prev = performance.now();
@@ -407,9 +492,10 @@ export default function PhoneScene(props: Props) {
           const dt = Math.min(0.05, (now - prev) / 1000);
           prev = now;
           const p = propsRef.current;
-          syncModel();
+          const spin = syncModel(now);
 
-          if (shown && p.tint !== lastTint) {
+          // colour swatches (only once the right model is showing)
+          if (shown && shownUrl === p.model.url && p.tint !== lastTint) {
             shown.setTint(p.tint);
             lastTint = p.tint;
           }
@@ -429,8 +515,8 @@ export default function PhoneScene(props: Props) {
               wasFeed = false;
               lockKey = "";
             }
-            const k = p.wallpaper.join();
-            if (k !== lockKey) {
+            const k = p.wallpaper.join() + shownUrl;
+            if (k !== lockKey && (shownUrl === p.model.url || !shown)) {
               drawLock(p.wallpaper);
               lockKey = k;
             }
@@ -445,12 +531,6 @@ export default function PhoneScene(props: Props) {
             lastMode = p.mode;
           }
           const t = now / 1000;
-          let spin = 0;
-          if (spinStart > 0) {
-            const k = Math.min(1, (now - spinStart) / 1100);
-            spin = easeInOutCubic(k) * Math.PI * 2;
-            if (k >= 1) spinStart = -1;
-          }
           const follow = 1 - Math.exp(-dt * 5);
 
           if (p.mode === "store") {
@@ -475,10 +555,17 @@ export default function PhoneScene(props: Props) {
             cur.cx = vw / 2;
             cur.cy = vh / 2;
             cur.h = shrinkFrom + (p.shrinkHeight - shrinkFrom) * k;
+            // the phone's sound sinks away into the crowd of screens
+            feedVolume = 0.9 * (1 - k) * (1 - k);
+            if (feedIdx >= 0 && videos[feedIdx]) videos[feedIdx].volume = Math.max(0, Math.min(1, feedVolume));
             cur.ry += (0 - cur.ry) * follow;
             cur.rx += (0 - cur.rx) * follow;
           } else {
             cur.op = 0;
+            if (wasFeed) {
+              videos.forEach((v) => v.pause());
+              wasFeed = false;
+            }
           }
           canvas.style.opacity = String(Math.max(0, Math.min(1, cur.op)));
 
