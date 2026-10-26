@@ -1,14 +1,15 @@
 "use client";
-/* eslint-disable @next/next/no-img-element */
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { playChime, startTimeTravel } from "@/lib/sounds";
 import { VIDEOS, thumbnailFor } from "@/components/youtube/videos";
+import TunnelScreen from "./TunnelScreens";
 import styles from "./rewind.module.css";
 
 /**
  * Travelling back in time: the camera glides down a dark corridor of screens.
- * The screens get older the further you go:
+ * The screens get older the further you go, each one showing a trend of its time
+ * (see TunnelScreens.tsx):
  *   2026 phones with the feed → 2020 video calls → 2012 YouTube → 2005 MSN → 1999 the early web → 1995
  * A quiet year counter runs backwards, each era is marked by a soft chime,
  * and at the end of the corridor there's the light of the very first page.
@@ -25,19 +26,14 @@ const ROWS = [-250, -10, 230];
 /** where each era starts along the corridor (0 = here, 1 = the end) */
 const STOPS: { at: number; era: Era; year: number; label: string; chime: number }[] = [
   { at: 0, era: "now", year: 2026, label: "The feed", chime: 659.25 },
-  { at: 0.2, era: "call", year: 2020, label: "The video call", chime: 587.33 },
-  { at: 0.4, era: "yt", year: 2012, label: "YouTube", chime: 523.25 },
-  { at: 0.6, era: "msn", year: 2005, label: "Messenger", chime: 440 },
+  { at: 0.2, era: "call", year: 2020, label: "Lockdown", chime: 587.33 },
+  { at: 0.4, era: "yt", year: 2012, label: "Going viral", chime: 523.25 },
+  { at: 0.6, era: "msn", year: 2005, label: "Online", chime: 440 },
   { at: 0.8, era: "web", year: 1999, label: "The early web", chime: 392 },
 ];
 /** the year shown when you reach the light (where the website starts) */
 const FIRST_YEAR = 1995;
 const eraAt = (f: number) => [...STOPS].reverse().find((s) => f >= s.at)!;
-
-/* still frames of the brainrot clips (public/feed/stills/clip1-1.jpg … clip7-4.jpg) */
-const STILLS: string[] = Array.from({ length: 7 }, (_, c) =>
-  Array.from({ length: 4 }, (_, i) => `/feed/stills/clip${c + 1}-${i + 1}.jpg`),
-).flat();
 
 /* the camera's easing (same as the CSS transition below) */
 const EASE = "cubic-bezier(0.45, 0, 0.3, 1)";
@@ -110,7 +106,7 @@ export default function RewindTunnel({ durationMs, onDone }: { durationMs: numbe
             rot: -side * (68 + ((n * 13) % 14)),
             era,
             seed: n,
-            img: era === "now" ? STILLS[n % STILLS.length] : era === "yt" ? ytThumbs[n % ytThumbs.length] : undefined,
+            img: era === "yt" ? ytThumbs[n % ytThumbs.length] : undefined,
           });
         }
       }
@@ -183,7 +179,7 @@ export default function RewindTunnel({ durationMs, onDone }: { durationMs: numbe
               className={`${styles.screen} ${styles[s.era]}`}
               style={{ transform: `translate3d(${s.x}px, ${s.y}px, ${s.z}px) rotateY(${s.rot}deg)` }}
             >
-              <ScreenContent s={s} />
+              <TunnelScreen era={s.era} seed={s.seed} img={s.img} />
             </div>
           ))}
 
@@ -211,71 +207,6 @@ export default function RewindTunnel({ durationMs, onDone }: { durationMs: numbe
       </div>
 
       <div className={`${styles.flash} ${flash ? styles.flashOn : ""}`} />
-    </div>
-  );
-}
-
-const NAMES = ["Sam", "Noor", "Jenni", "Daan", "Lisa", "Milan", "Emma", "Yara"];
-const BUDDIES = ["~*sweet*~", "xX_skater_Xx", "Lisa ♥", "brb dinner", "Noor (Away)", "Daan", "*~music~*"];
-
-function ScreenContent({ s }: { s: Screen }) {
-  if (s.era === "now") return s.img ? <img src={s.img} alt="" decoding="async" /> : null;
-
-  if (s.era === "call")
-    return (
-      <div className={styles.grid}>
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} style={{ background: `hsl(${(s.seed * 47 + i * 70) % 360} 18% 26%)` }}>
-            <b>{NAMES[(s.seed + i) % NAMES.length][0]}</b>
-            <span>{NAMES[(s.seed + i) % NAMES.length]}</span>
-          </div>
-        ))}
-      </div>
-    );
-
-  if (s.era === "yt")
-    return (
-      <div className={styles.ytPage}>
-        <div className={styles.ytTop}>
-          <i />
-          <em />
-        </div>
-        <div className={styles.ytVideo}>{s.img && <img src={s.img} alt="" decoding="async" />}</div>
-        <div className={styles.ytBar}>
-          <span style={{ width: `${20 + ((s.seed * 31) % 70)}%` }} />
-        </div>
-      </div>
-    );
-
-  if (s.era === "msn")
-    return (
-      <div className={styles.xp}>
-        <div className={styles.msnWin}>
-          <div className={styles.msnTitle}>Messenger</div>
-          <div className={styles.msnBody}>
-            {[0, 1, 2, 3, 4].map((i) => (
-              <p key={i}>
-                <i className={(s.seed + i) % 3 === 0 ? styles.away : ""} />
-                {BUDDIES[(s.seed + i) % BUDDIES.length]}
-              </p>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-
-  // the early web: grey browser, Times, blue links, "under construction"
-  return (
-    <div className={styles.browser}>
-      <div className={styles.webChrome} />
-      <div className={styles.webPage}>
-        <h6>Welcome to my Homepage!</h6>
-        <u>Links</u>
-        <u>Guestbook</u>
-        <u>About me</u>
-        <div className={styles.construction}>UNDER CONSTRUCTION</div>
-        <small>You are visitor #{String(1000 + ((s.seed * 377) % 9000)).padStart(6, "0")}</small>
-      </div>
     </div>
   );
 }

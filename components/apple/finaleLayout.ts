@@ -6,8 +6,9 @@ export function finaleLayout(vw: number, vh: number) {
   const tileH = tileW * 2.067;
   const gap = Math.round(tileW * 0.18);
   const shrink = tileW / pw; // big phone → one tile
-  const outlook = 0.8; // extra pull-back at the end
-  return { pw, phoneH, tileW, tileH, gap, shrink, outlook };
+  const outlook = 0.8; // extra pull-back at the end of the zoom
+  const drift = 0.8; // while you look at the wall, the camera slowly pulls back a bit more
+  return { pw, phoneH, tileW, tileH, gap, shrink, outlook, drift };
 }
 
 /** Same curve in JS (3D phone) and CSS (wall), so both move together. */

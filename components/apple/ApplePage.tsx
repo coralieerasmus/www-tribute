@@ -72,7 +72,7 @@ const MODELS: Model[] = [
       url: "/models/iphone-17-pro.glb",
       screenMaterial: "Screen_BG",
       bezelMaterials: ["Screen_Rim"],
-      bodyMaterials: ["Material.004", "Material.002"],
+      bodyMaterials: ["Material.004", "Material.002", "Rim_Buttons"],
     },
     finishes: [
       { name: "Deep Blue", frame: "#4f7f8c", tint: null, colors: ["#c7d2fe", "#3b5bdb", "#0b1437"] },
@@ -206,9 +206,13 @@ export default function ApplePage() {
     ? "store"
     : stage === "zoom"
       ? "shrink"
-      : stage === "glitch" || stage === "rewind"
-        ? "hidden"
-        : "center";
+      : stage === "wall" || stage === "glitch"
+        ? "drift"
+        : stage === "rewind"
+          ? "hidden"
+          : "center";
+  // the phone's own sound: loud when it's alone, then it melts into the crowd of screens
+  const phoneVolume = stage === "zoom" ? 0.6 : stage === "wall" ? 0.4 : stage === "glitch" || stage === "rewind" ? 0 : 0.9;
 
   return (
     <>
@@ -446,10 +450,13 @@ export default function ApplePage() {
           wallpaper={finish.colors}
           anchor={phoneRef}
           mode={phoneMode}
-          feed={stage === "solo" || stage === "zoom"}
+          feed={stage === "solo" || stage === "zoom" || stage === "wall" || stage === "glitch"}
+          volume={phoneVolume}
           centerHeight={layout?.phoneH ?? 600}
           shrinkHeight={layout ? layout.tileH * layout.outlook : 100}
           shrinkMs={TIMINGS.finaleZoomMs}
+          driftHeight={layout ? layout.tileH * layout.outlook * layout.drift : 100}
+          driftMs={TIMINGS.finaleWallMs}
           zIndex={inFinale ? 850 : 40}
           preload={MODELS.map((m) => m.three)}
           onStatus={setPhone3D}

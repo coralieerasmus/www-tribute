@@ -33,8 +33,10 @@ export const TIMINGS = {
   finaleSoloMs: 5_500,
   /** The phone flies away and the wall of screens appears. */
   finaleZoomMs: 5_000,
-  /** The wall cracks / glitches. */
-  finaleGlitchMs: 1_600,
+  /** Looking at the wall of screens (the camera slowly keeps drifting back), with every video's sound playing at once. */
+  finaleWallMs: 7_000,
+  /** The signal glitches out and the screen switches off. */
+  finaleGlitchMs: 2_400,
   /** Travelling back in time (2026 → the 90s) through a corridor of screens, then back to the landing page. */
   rewindMs: 10_000,
 } as const;

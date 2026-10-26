@@ -32,6 +32,12 @@ export const CLIPS: FeedItem[] = [
   { id: "c5", kind: "brainrot", user: "@cat.lore", caption: "the lore goes so deep ⚡", emoji: "🐈", likes: "1.2M", bg: "#222", video: "/feed/clip5.mp4", stills: stills(5) },
   { id: "c6", kind: "brainrot", user: "@infinite.loop", caption: "WAIT FOR IT", emoji: "😐", likes: "4.0M", bg: "#222", video: "/feed/clip6.mp4", stills: stills(6) },
   { id: "c7", kind: "brainrot", user: "@edit.overload", caption: "edit so hard my phone got hot 🔥", emoji: "🔥", likes: "720K", bg: "#222", video: "/feed/clip7.mp4", stills: stills(7) },
+  { id: "c8", kind: "brainrot", user: "@cupcake.heaven", caption: "carrot cat has ascended 😇", emoji: "🥕", likes: "1.6M", bg: "#222", video: "/feed/clip8.mp4", stills: stills(8) },
+  { id: "c9", kind: "brainrot", user: "@spooky.szn", caption: "halloween is coming 🎃", emoji: "🎃", likes: "890K", bg: "#222", video: "/feed/clip9.mp4", stills: stills(9) },
+  { id: "c10", kind: "brainrot", user: "@cupcake.cats", caption: "don't let it ruin your day 🧁", emoji: "🧁", likes: "2.2M", bg: "#222", video: "/feed/clip10.mp4", stills: stills(10) },
+  { id: "c11", kind: "brainrot", user: "@bathroom.art", caption: "#hopecore 🥹", emoji: "🥹", likes: "540K", bg: "#222", video: "/feed/clip11.mp4", stills: stills(11) },
+  { id: "c12", kind: "brainrot", user: "@peak.tiktok", caption: "caught bro washing cars 😭", emoji: "😭", likes: "3.3M", bg: "#222", video: "/feed/clip12.mp4", stills: stills(12) },
+  { id: "c13", kind: "brainrot", user: "@office.chaos", caption: "when the teacher leaves the room 💀", emoji: "💀", likes: "4.7M", bg: "#222", video: "/feed/clip13.mp4", stills: stills(13) },
 ];
 
 /** Every screen in the finale plays only your clips. Add more to CLIPS above to get more variety. */

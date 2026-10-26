@@ -30,7 +30,7 @@ export type PhoneModel = {
   bezel?: number;
 };
 
-export type PhoneMode = "store" | "center" | "shrink" | "hidden";
+export type PhoneMode = "store" | "center" | "shrink" | "drift" | "hidden";
 
 type Props = {
   model: PhoneModel;
@@ -47,6 +47,11 @@ type Props = {
   /** phone height (px) at the end of "shrink" */
   shrinkHeight: number;
   shrinkMs: number;
+  /** "drift": the phone slowly (linearly) gets smaller, together with the wall behind it */
+  driftHeight?: number;
+  driftMs?: number;
+  /** volume of the phone's own video sound (0–1) */
+  volume?: number;
   zIndex: number;
   /** other models to load in the background, so switching is instant */
   preload?: PhoneModel[];
@@ -55,7 +60,10 @@ type Props = {
 
 type Prepared = {
   root: T.Group;
-  setTint: (hex: string | null) => void;
+  /** fade the body to this colour (or jump there with `instant`) */
+  setTint: (hex: string | null, instant?: boolean) => void;
+  /** called every frame: moves the colour a bit closer to its target */
+  update: (dt: number) => void;
 };
 
 const CANVAS_W = 540;
@@ -88,7 +96,7 @@ export default function PhoneScene(props: Props) {
 
         /* ---------- renderer / scene ---------- */
         const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.0;
@@ -164,13 +172,14 @@ export default function PhoneScene(props: Props) {
         let feedIdx = -1;
         const ensureVideos = () => {
           if (videos.length) return;
-          videos = CLIPS.filter((c) => c.video).map((c) => {
+          videos = CLIPS.filter((c) => c.video).map((c, i) => {
             const v = document.createElement("video");
             v.src = c.video!;
             v.loop = true;
             v.muted = true;
             v.playsInline = true;
-            v.preload = "auto";
+            // only the first few load straight away; the rest load just before their turn
+            v.preload = i < 3 ? "auto" : "metadata";
             return v;
           });
           videos.slice(0, 2).forEach((v) => void v.play().catch(() => {}));
@@ -377,9 +386,19 @@ export default function PhoneScene(props: Props) {
             mesh.material = Array.isArray(mesh.material) ? next : next[0];
           });
 
+          const targets = body.map((b) => b.orig.clone());
           return {
             root: holder,
-            setTint: (hex) => body.forEach((b) => (hex ? b.mat.color.set(hex) : b.mat.color.copy(b.orig))),
+            setTint: (hex, instant) =>
+              body.forEach((b, i) => {
+                if (hex) targets[i].set(hex);
+                else targets[i].copy(b.orig);
+                if (instant) b.mat.color.copy(targets[i]);
+              }),
+            update: (dt) => {
+              const k = 1 - Math.exp(-dt * 6); // smooth colour fade (~0.5s)
+              body.forEach((b, i) => b.mat.color.lerp(targets[i], k));
+            },
           };
         };
         const get = (m: PhoneModel) => {
@@ -393,8 +412,9 @@ export default function PhoneScene(props: Props) {
          * Like a turntable: when you pick another model, the phone turns
          * smoothly; halfway through the first quarter turn (when it's edge-on
          * and you can't see it) the new model takes its place and finishes the turn.
-         * The turn only starts once the new model is loaded, so it never stutters. */
-        const TURN_MS = 1500;
+         * The turn only starts once the new model is loaded AND warmed up on the
+         * graphics card, so it never stutters. */
+        const TURN_MS = 2800;
         let shown: Prepared | null = null;
         let shownUrl = "";
         let firstReady = false;
@@ -402,9 +422,28 @@ export default function PhoneScene(props: Props) {
         const ready = new Map<string, Prepared>();
         let turn: { start: number; swapped: boolean } | null = null;
 
+        /* Draw a model once, off-screen, so its textures and shaders are sent
+           to the graphics card now and not in the middle of the spin
+           (that upload was what made the turn hitch). */
+        const warmTarget = new THREE.WebGLRenderTarget(8, 8);
+        const warm = (p: Prepared) => {
+          const prevParent = p.root.parent;
+          scene.add(p.root);
+          renderer.setRenderTarget(warmTarget);
+          renderer.render(scene, camera);
+          renderer.setRenderTarget(null);
+          scene.remove(p.root);
+          if (prevParent) prevParent.add(p.root);
+        };
+        const makeReady = (url: string, p: Prepared) => {
+          if (ready.has(url)) return;
+          warm(p);
+          ready.set(url, p);
+        };
+
         const load = (m: PhoneModel) => {
           get(m)
-            .then((p) => ready.set(m.url, p))
+            .then((p) => makeReady(m.url, p))
             .catch((err) => {
               console.error("PhoneScene: could not load", m.url, err);
               if (!firstReady && !failed) {
@@ -419,7 +458,7 @@ export default function PhoneScene(props: Props) {
           pivot.add(p.root);
           shown = p;
           shownUrl = url;
-          p.setTint(propsRef.current.tint);
+          p.setTint(propsRef.current.tint, true);
           lastTint = propsRef.current.tint;
         };
 
@@ -438,7 +477,11 @@ export default function PhoneScene(props: Props) {
               propsRef.current.onStatus?.("ready");
               // warm up the other models one by one, so switching is instant
               (propsRef.current.preload ?? []).reduce<Promise<unknown>>(
-                (chain, pm) => chain.then(() => get(pm).then((p) => ready.set(pm.url, p)).catch(() => {})),
+                (chain, pm) =>
+                  chain
+                    .then(() => get(pm))
+                    .then((p) => new Promise<void>((res) => setTimeout(() => (makeReady(pm.url, p), res()), 200)))
+                    .catch(() => {}),
                 Promise.resolve(),
               );
             }
@@ -449,7 +492,9 @@ export default function PhoneScene(props: Props) {
           if (!turn) return 0;
 
           const k = Math.min(1, (now - turn.start) / TURN_MS);
-          const angle = Math.PI * 2 * ((1 - Math.cos(Math.PI * k)) / 2); // smooth start and stop
+          // ease in and out, like a slow turntable
+          const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+          const angle = Math.PI * 2 * e;
           if (!turn.swapped && angle >= Math.PI / 2) {
             const want = propsRef.current.model.url;
             if (ready.has(want) && want !== shownUrl) show(want);
@@ -499,6 +544,7 @@ export default function PhoneScene(props: Props) {
             shown.setTint(p.tint);
             lastTint = p.tint;
           }
+          (shown as Prepared | null)?.update(dt);
 
           // screen content
           if (p.feed) {
@@ -524,7 +570,7 @@ export default function PhoneScene(props: Props) {
 
           // where should the phone be?
           if (p.mode !== lastMode) {
-            if (p.mode === "shrink") {
+            if (p.mode === "shrink" || p.mode === "drift") {
               shrinkStart = now;
               shrinkFrom = cur.h;
             }
@@ -555,9 +601,14 @@ export default function PhoneScene(props: Props) {
             cur.cx = vw / 2;
             cur.cy = vh / 2;
             cur.h = shrinkFrom + (p.shrinkHeight - shrinkFrom) * k;
-            // the phone's sound sinks away into the crowd of screens
-            feedVolume = 0.9 * (1 - k) * (1 - k);
-            if (feedIdx >= 0 && videos[feedIdx]) videos[feedIdx].volume = Math.max(0, Math.min(1, feedVolume));
+            cur.ry += (0 - cur.ry) * follow;
+            cur.rx += (0 - cur.rx) * follow;
+          } else if (p.mode === "drift") {
+            // linear, exactly like the CSS transition of the wall
+            const k = Math.min(1, (now - shrinkStart) / (p.driftMs ?? 1));
+            cur.cx = vw / 2;
+            cur.cy = vh / 2;
+            cur.h = shrinkFrom + ((p.driftHeight ?? shrinkFrom) - shrinkFrom) * k;
             cur.ry += (0 - cur.ry) * follow;
             cur.rx += (0 - cur.rx) * follow;
           } else {
@@ -568,6 +619,11 @@ export default function PhoneScene(props: Props) {
             }
           }
           canvas.style.opacity = String(Math.max(0, Math.min(1, cur.op)));
+
+          // the phone's own sound (fades smoothly when the volume prop changes)
+          const wantVol = p.volume ?? 0.9;
+          feedVolume += (wantVol - feedVolume) * (1 - Math.exp(-dt * 3));
+          if (wasFeed && feedIdx >= 0 && videos[feedIdx]) videos[feedIdx].volume = Math.max(0, Math.min(1, feedVolume));
 
           const wpp = (2 * Math.tan(((FOV / 2) * Math.PI) / 180) * CAM_Z) / vh; // world units per pixel at z=0
           pivot.position.set((cur.cx - vw / 2) * wpp, -(cur.cy - vh / 2) * wpp, 0);
@@ -594,6 +650,7 @@ export default function PhoneScene(props: Props) {
             mesh.geometry?.dispose();
           });
           screenTex.dispose();
+          warmTarget.dispose();
           envTex.dispose();
           pmrem.dispose();
           renderer.dispose();

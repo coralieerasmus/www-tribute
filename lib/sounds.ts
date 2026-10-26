@@ -623,3 +623,116 @@ export function startTimeTravel(durationMs: number): () => void {
     stopAll([...all, tone], now + 0.4);
   };
 }
+
+/* ======================================================================
+ * The crowd: every brainrot video's sound playing at once (wall of screens)
+ * ==================================================================== */
+
+export type Crowd = {
+  /** start chopping the sound up like a broken signal */
+  glitch: () => void;
+  /** cut everything off */
+  stop: () => void;
+};
+
+/**
+ * Plays all `srcs` together, one after another joining in (every `staggerMs`),
+ * until it's a wall of noise. `glitch()` makes them stutter, skip and change
+ * speed; `stop()` cuts them.
+ */
+export function startCrowd(srcs: string[], { volume = 0.22, staggerMs = 450 } = {}): Crowd {
+  const els: HTMLAudioElement[] = [];
+  const timers: ReturnType<typeof setTimeout>[] = [];
+  let fade: ReturnType<typeof setInterval> | null = null;
+  let chop: ReturnType<typeof setInterval> | null = null;
+  let stopped = false;
+
+  srcs.forEach((src, i) => {
+    timers.push(
+      setTimeout(() => {
+        if (stopped) return;
+        const a = new Audio(src);
+        a.loop = true;
+        a.volume = 0;
+        a.preload = "auto";
+        // start somewhere in the middle, so they don't all begin with the same intro
+        a.addEventListener(
+          "loadedmetadata",
+          () => {
+            if (a.duration) a.currentTime = (a.duration * ((i * 0.37) % 1)) * 0.8;
+          },
+          { once: true },
+        );
+        void a.play().catch(() => {});
+        els.push(a);
+      }, i * staggerMs),
+    );
+  });
+
+  // each new voice fades in
+  fade = setInterval(() => {
+    els.forEach((a) => {
+      if (a.volume < volume) a.volume = Math.min(volume, a.volume + volume / 12);
+    });
+  }, 80);
+
+  return {
+    glitch: () => {
+      if (stopped || chop) return;
+      if (fade) clearInterval(fade);
+      chop = setInterval(() => {
+        els.forEach((a) => {
+          const r = Math.random();
+          a.volume = r < 0.45 ? 0 : Math.min(1, volume * (1.2 + Math.random()));
+          (a as HTMLAudioElement & { preservesPitch?: boolean }).preservesPitch = false;
+          a.playbackRate = [0.5, 0.75, 1, 1.5, 2][Math.floor(Math.random() * 5)];
+          // tiny skips back: the "stuck buffer" stutter
+          if (Math.random() < 0.3 && a.currentTime > 0.2) a.currentTime -= 0.08 + Math.random() * 0.12;
+        });
+        if (Math.random() < 0.5) playDropout();
+      }, 70);
+    },
+    stop: () => {
+      stopped = true;
+      timers.forEach(clearTimeout);
+      if (fade) clearInterval(fade);
+      if (chop) clearInterval(chop);
+      els.forEach((a) => {
+        a.pause();
+        a.removeAttribute("src");
+        a.load();
+      });
+      els.length = 0;
+    },
+  };
+}
+
+/** The signal dies: a short low thud as the screen switches off. */
+export function playPowerOff() {
+  const c = getAudioContext();
+  if (!c) return;
+  void c.resume();
+  const t = c.currentTime + 0.01;
+  const out = bus(c, 0.8, 0.9);
+  const o = c.createOscillator();
+  o.frequency.setValueAtTime(120, t);
+  o.frequency.exponentialRampToValueAtTime(28, t + 0.5);
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.6, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+  o.connect(g).connect(out);
+  o.start(t);
+  o.stop(t + 0.7);
+  // the high whine of a CRT dying
+  const w = c.createOscillator();
+  w.frequency.setValueAtTime(15600, t);
+  w.frequency.exponentialRampToValueAtTime(9000, t + 0.4);
+  const wg = c.createGain();
+  wg.gain.setValueAtTime(0.02, t);
+  wg.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+  w.connect(wg).connect(c.destination);
+  w.start(t);
+  w.stop(t + 0.5);
+  setTimeout(() => out.disconnect(), 6000);
+}
