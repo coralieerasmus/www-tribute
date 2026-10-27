@@ -16,16 +16,16 @@ const capsules = (colors: string[]) =>
     .join(", ")}), linear-gradient(#f6f6f6, #f6f6f6)`;
 
 const PRODUCTS = [
-  { title: "Apple iPhone 17 Pro 256GB Cosmic Orange", price: "€1,329.00", store: "Coolblue", ship: "Free", stars: "(6k+)", screen: "linear-gradient(160deg,#ff8a3d,#c2410c 60%,#431407)", frame: "#d9733a", back: true },
-  { title: "Apple iPhone 17 256GB Lavender", price: "€969.00", store: "MediaMarkt", local: true, pickup: "Pick up tomorrow", stars: "(6k+)", screen: "radial-gradient(circle at 30% 30%,#e9d5ff,#a78bfa 55%,#4c1d95)", frame: "#c4b5fd" },
+  { title: "Apple iPhone 18 Pro 256GB Cosmic Orange", price: "€1,329.00", store: "Coolblue", ship: "Free", stars: "(6k+)", screen: "linear-gradient(160deg,#ff8a3d,#c2410c 60%,#431407)", frame: "#d9733a", back: true },
+  { title: "Apple iPhone 18 256GB Lavender", price: "€969.00", store: "MediaMarkt", local: true, pickup: "Pick up tomorrow", stars: "(6k+)", screen: "radial-gradient(circle at 30% 30%,#e9d5ff,#a78bfa 55%,#4c1d95)", frame: "#c4b5fd" },
   { title: "iPhone 13 128GB Midnight - Refurbished - Excellent", price: "€349.00", store: "RefurbishedDirect", ship: "Free", refurb: true, screen: "linear-gradient(160deg,#1e293b,#0f172a)", frame: "#1f2937" },
-  { title: "Apple iPhone Air 256GB Sky Blue", price: "€1,229.00", store: "MediaMarkt.nl", ship: "Free", stars: "(3k+)", screen: "radial-gradient(circle at 70% 20%,#e0f2fe,#7dd3fc 50%,#0369a1)", frame: "#bae6fd" },
+  { title: "Apple iPhone 18 Air 256GB Sky Blue", price: "€1,229.00", store: "MediaMarkt.nl", ship: "Free", stars: "(3k+)", screen: "radial-gradient(circle at 70% 20%,#e0f2fe,#7dd3fc 50%,#0369a1)", frame: "#bae6fd" },
   { title: "Apple iPhone 15 128GB Black | Refurbished", price: "€479.00", store: "refurbed.nl", ship: "Free", refurb: true, screen: "linear-gradient(120deg,#1b2a6b,#b0174a 55%,#ff5a2a)", frame: "#111" },
-  { title: "Apple iPhone 17 Pro Max 512GB Deep Blue", price: "€1,749.00", store: "Coolblue", local: true, pickup: "Pick up today", stars: "(6k+)", screen: "linear-gradient(160deg,#1e3a8a,#172554)", frame: "#1e3a8a", back: true },
+  { title: "Apple iPhone 18 Pro Max 512GB Deep Blue", price: "€1,749.00", store: "Coolblue", local: true, pickup: "Pick up today", stars: "(6k+)", screen: "linear-gradient(160deg,#1e3a8a,#172554)", frame: "#1e3a8a", back: true },
   { title: "Samsung Galaxy S26 256GB Phantom Black", price: "€899.00", was: "€1,099", store: "Coolblue.nl", ship: "Free", rating: "Store rating 4.2/5", sale: true, screen: "radial-gradient(circle at 60% 40%,#9fd3ff,#4b7bd8 60%,#2a3f8f)", frame: "#2b2b2b" },
-  { title: "Apple iPhone 17 256GB Sage", price: "€949.00", store: "bol.com", ship: "Free", stars: "(6k+)", screen: "radial-gradient(circle at 30% 70%,#d9f99d,#84cc16 55%,#365314)", frame: "#bcd4a8" },
-  { title: "Apple iPhone 17e 128GB White", price: "€699.00", store: "Amac", ship: "Free", stars: "(2k+)", screen: "linear-gradient(160deg,#f1f5f9,#cbd5e1)", frame: "#e5e7eb" },
-  { title: "Apple iPhone Air 512GB Space Black", price: "€1,479.00", store: "Coolblue", ship: "Free", stars: "(1k+)", screen: "linear-gradient(200deg,#000,#3a1a6b 50%,#ff6a3d)", frame: "#111" },
+  { title: "Apple iPhone 18 256GB Sage", price: "€949.00", store: "bol.com", ship: "Free", stars: "(6k+)", screen: "radial-gradient(circle at 30% 70%,#d9f99d,#84cc16 55%,#365314)", frame: "#bcd4a8" },
+  { title: "Apple iPhone 18e 128GB White", price: "€699.00", store: "Amac", ship: "Free", stars: "(2k+)", screen: "linear-gradient(160deg,#f1f5f9,#cbd5e1)", frame: "#e5e7eb" },
+  { title: "Apple iPhone 18 Air 512GB Space Black", price: "€1,479.00", store: "Coolblue", ship: "Free", stars: "(1k+)", screen: "linear-gradient(200deg,#000,#3a1a6b 50%,#ff6a3d)", frame: "#111" },
 ];
 
 const RESULTS = [
@@ -35,16 +35,16 @@ const RESULTS = [
     title: "iPhone - Apple (NL)",
     snippet: (
       <>
-        Ontdek de nieuwste <b>iPhone</b>-modellen, waaronder <b>iPhone 17 Pro</b>, <b>iPhone Air</b> en <b>iPhone 17</b>. Vergelijk modellen, bekijk
+        Ontdek de nieuwste <b>iPhone</b>-modellen, waaronder <b>iPhone 18 Pro</b>, <b>iPhone 18 Air</b> en <b>iPhone 18</b>. Vergelijk modellen, bekijk
         kleuren en kies de iPhone die bij jou past.
       </>
     ),
   },
   {
     site: "Apple",
-    url: "https://www.apple.com › iphone-17-pro",
+    url: "https://www.apple.com › iphone-18-pro",
     translate: true,
-    title: "iPhone 17 Pro",
+    title: "iPhone 18 Pro",
     snippet: (
       <>
         De krachtigste <b>iPhone</b> ooit. Pro-camerasysteem, een display dat nog helderder is en batterijduur voor de hele dag. Gemaakt voor AI.
@@ -56,7 +56,7 @@ const RESULTS = [
     site: "Coolblue",
     url: "https://www.coolblue.nl › mobiele-telefoons › apple-iphone",
     title: "Apple iPhone vergelijken en kopen",
-    snippet: <>Alle <b>Apple iPhones</b> op een rij. Vergelijk iPhone 17, Air en Pro en lees reviews van andere klanten. Vandaag besteld, morgen in huis.</>,
+    snippet: <>Alle <b>Apple iPhones</b> op een rij. Vergelijk iPhone 18, Air en Pro en lees reviews van andere klanten. Vandaag besteld, morgen in huis.</>,
     rating: "4.6 · 12,408 reviews",
   },
   {
@@ -280,7 +280,7 @@ export default function GoogleResults() {
                 View previous updates on Google
               </Link>
               <div className={styles.sideCards}>
-                {["Back to school deals", "New: iPhone 17 Pro in store", "Trade in your old phone"].map((t, i) => (
+                {["Back to school deals", "New: iPhone 18 Pro in store", "Trade in your old phone"].map((t, i) => (
                   <Link key={t} href={NEXT} className={styles.sideCard}>
                     <PhoneThumb screen={PRODUCTS[[1, 3, 2][i]].screen} frame={PRODUCTS[[1, 3, 2][i]].frame} />
                     <span>{t}</span>

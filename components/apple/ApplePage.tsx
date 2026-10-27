@@ -37,10 +37,10 @@ type Model = {
 const MODELS: Model[] = [
   {
     id: "air",
-    name: "iPhone Air",
+    name: "iPhone 18 Air",
     tagline: "The thinnest iPhone ever. With pro performance inside.",
     price: 1229,
-    chip: "A19 Pro chip",
+    chip: "A20 Pro chip",
     display: "6.5-inch Super Retina XDR, 120Hz",
     camera: "48MP Fusion camera",
     battery: "Up to 27 hours video playback",
@@ -60,10 +60,10 @@ const MODELS: Model[] = [
   },
   {
     id: "pro",
-    name: "iPhone 17 Pro",
+    name: "iPhone 18 Pro",
     tagline: "All out Pro. The most powerful iPhone yet.",
     price: 1329,
-    chip: "A19 Pro chip with vapour chamber cooling",
+    chip: "A20 Pro chip with vapour chamber cooling",
     display: "6.3-inch Super Retina XDR with ProMotion",
     camera: "Pro Fusion camera system, 3 × 48MP",
     battery: "Up to 33 hours video playback",
@@ -82,10 +82,10 @@ const MODELS: Model[] = [
   },
   {
     id: "pro-max",
-    name: "iPhone 17 Pro Max",
+    name: "iPhone 18 Pro Max",
     tagline: "The biggest Pro display. The longest battery life ever.",
     price: 1479,
-    chip: "A19 Pro chip with vapour chamber cooling",
+    chip: "A20 Pro chip with vapour chamber cooling",
     display: "6.9-inch Super Retina XDR with ProMotion",
     camera: "Pro Fusion camera system, 3 × 48MP, 8× optical zoom",
     battery: "Up to 39 hours video playback",
@@ -133,6 +133,7 @@ export default function ApplePage() {
   const [layout, setLayout] = useState<ReturnType<typeof finaleLayout> | null>(null);
 
   const phoneRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLElement>(null);
   const detailsRef = useRef<HTMLElement>(null);
   const compareRef = useRef<HTMLElement>(null);
   const supportRef = useRef<HTMLElement>(null);
@@ -208,11 +209,11 @@ export default function ApplePage() {
       ? "shrink"
       : stage === "wall" || stage === "glitch"
         ? "drift"
-        : stage === "rewind"
+        : stage === "off" || stage === "rewind"
           ? "hidden"
           : "center";
   // the phone's own sound: loud when it's alone, then it melts into the crowd of screens
-  const phoneVolume = stage === "zoom" ? 0.6 : stage === "wall" ? 0.4 : stage === "glitch" || stage === "rewind" ? 0 : 0.9;
+  const phoneVolume = stage === "zoom" ? 0.6 : stage === "wall" ? 0.4 : stage === "glitch" || stage === "off" || stage === "rewind" ? 0 : 0.9;
 
   return (
     <>
@@ -275,7 +276,7 @@ export default function ApplePage() {
         </nav>
 
         {/* ---------- hero ---------- */}
-        <header className={styles.hero}>
+        <header ref={heroRef} className={styles.hero}>
           <div className={styles.heroText}>
             <p className={styles.eyebrow}>New</p>
             <h1 className={styles.heroTitle}>{model.name}</h1>
@@ -449,6 +450,7 @@ export default function ApplePage() {
           tint={finish.tint}
           wallpaper={finish.colors}
           anchor={phoneRef}
+          host={heroRef}
           mode={phoneMode}
           feed={stage === "solo" || stage === "zoom" || stage === "wall" || stage === "glitch"}
           volume={phoneVolume}

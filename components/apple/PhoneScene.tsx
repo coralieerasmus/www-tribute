@@ -5,7 +5,9 @@ import type * as T from "three";
 import { CLIPS } from "./feed";
 
 /**
- * The 3D iPhone (three.js), drawn on a transparent full-window canvas.
+ * The 3D iPhone (three.js), drawn on a transparent canvas.
+ * In the store the canvas sits inside the hero section and scrolls with it;
+ * in the finale it's moved to a fixed, full-screen layer.
  *
  * - In the store it sits exactly on top of an "anchor" element in the page
  *   (so it scrolls with the hero) and tilts with the mouse.
@@ -39,6 +41,9 @@ type Props = {
   /** 3 colours for the lock-screen wallpaper */
   wallpaper: [string, string, string];
   anchor: RefObject<HTMLElement | null>;
+  /** in the store the canvas lives inside this element (the hero), so it scrolls
+   *  together with the page like any other content (needs position: relative) */
+  host: RefObject<HTMLElement | null>;
   mode: PhoneMode;
   /** true = the screen plays the feed instead of the lock screen */
   feed: boolean;
@@ -74,15 +79,38 @@ const SWIPE_MS = 380;
 const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
 export default function PhoneScene(props: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const propsRef = useRef(props);
   useEffect(() => {
     propsRef.current = props;
   });
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    // The canvas is made here (not by React) so it can be moved between the hero
+    // and the full-screen layer without losing the 3D context.
+    const canvas = document.createElement("canvas");
+    canvas.setAttribute("aria-hidden", "true");
+    let inHost = false;
+    const place = (store: boolean) => {
+      const host = propsRef.current.host.current;
+      const s = canvas.style;
+      s.pointerEvents = "none";
+      s.top = "0";
+      s.left = "0";
+      s.width = "100%";
+      s.zIndex = String(propsRef.current.zIndex);
+      if (store && host) {
+        s.position = "absolute";
+        s.height = "100%";
+        if (canvas.parentElement !== host) host.appendChild(canvas);
+        inHost = true;
+      } else {
+        s.position = "fixed";
+        s.height = "100vh";
+        if (canvas.parentElement !== document.body) document.body.appendChild(canvas);
+        inHost = false;
+      }
+    };
+    place(propsRef.current.mode === "store");
     let disposed = false;
     let cleanup = () => {};
 
@@ -514,14 +542,17 @@ export default function PhoneScene(props: Props) {
 
         let vw = 1;
         let vh = 1;
+        /** keep the drawing size equal to the canvas size (it changes when the canvas moves) */
         const resize = () => {
-          vw = window.innerWidth;
-          vh = window.innerHeight;
+          const w = canvas.clientWidth || window.innerWidth;
+          const h = canvas.clientHeight || window.innerHeight;
+          if (w === vw && h === vh) return;
+          vw = w;
+          vh = h;
           renderer.setSize(vw, vh, false);
           camera.aspect = vw / vh;
           camera.updateProjectionMatrix();
         };
-        window.addEventListener("resize", resize);
         resize();
 
         /* ---------- animation loop ---------- */
@@ -534,6 +565,7 @@ export default function PhoneScene(props: Props) {
         let prev = performance.now();
 
         const tick = (now: number) => {
+          resize();
           const dt = Math.min(0.05, (now - prev) / 1000);
           prev = now;
           const p = propsRef.current;
@@ -570,6 +602,18 @@ export default function PhoneScene(props: Props) {
 
           // where should the phone be?
           if (p.mode !== lastMode) {
+            // leaving the store: the canvas moves from the hero to a fixed full-screen layer,
+            // so positions inside the hero become positions on the screen
+            const wantHost = p.mode === "store";
+            if (wantHost !== inHost) {
+              const before = canvas.getBoundingClientRect();
+              place(wantHost);
+              const after = canvas.getBoundingClientRect();
+              cur.cx += before.left - after.left;
+              cur.cy += before.top - after.top;
+            }
+            canvas.style.zIndex = String(p.zIndex);
+            canvas.style.visibility = p.mode === "hidden" ? "hidden" : "visible";
             if (p.mode === "shrink" || p.mode === "drift") {
               shrinkStart = now;
               shrinkFrom = cur.h;
@@ -582,8 +626,11 @@ export default function PhoneScene(props: Props) {
           if (p.mode === "store") {
             const r = p.anchor.current?.getBoundingClientRect();
             if (r) {
-              cur.cx = r.left + r.width / 2;
-              cur.cy = r.top + r.height / 2 + Math.sin(t * 1.2) * 8;
+              // position inside the hero: the canvas scrolls with the hero, so this
+              // never changes while scrolling and the phone can't lag behind
+              const c = canvas.getBoundingClientRect();
+              cur.cx = r.left - c.left + r.width / 2;
+              cur.cy = r.top - c.top + r.height / 2 + Math.sin(t * 1.2) * 8;
               cur.h = r.height;
             }
             cur.ry += (pointer.x * 0.5 - cur.ry) * follow;
@@ -638,7 +685,6 @@ export default function PhoneScene(props: Props) {
         cleanup = () => {
           cancelAnimationFrame(raf);
           window.removeEventListener("pointermove", onPointer);
-          window.removeEventListener("resize", resize);
           videos.forEach((v) => {
             v.pause();
             v.removeAttribute("src");
@@ -665,22 +711,10 @@ export default function PhoneScene(props: Props) {
     return () => {
       disposed = true;
       cleanup();
+      canvas.remove();
     };
   }, []);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      aria-hidden="true"
-      style={{
-        position: "fixed",
-        inset: 0,
-        width: "100vw",
-        height: "100vh",
-        zIndex: props.zIndex,
-        pointerEvents: "none",
-        transition: "opacity 0.25s",
-      }}
-    />
-  );
+  // the canvas is created and placed by the effect above
+  return null;
 }

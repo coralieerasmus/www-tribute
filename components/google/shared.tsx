@@ -12,9 +12,9 @@ export function isValidQuery(q: string) {
 
 export const SUGGESTIONS = [
   "apple iphone",
-  "apple iphone 17 pro",
+  "apple iphone 18 pro",
   "apple iphone price",
-  "apple iphone air",
+  "apple iphone 18 air",
   "apple iphone refurbished",
   "apple iphone vs samsung",
   "apple iphone deals eindhoven",
