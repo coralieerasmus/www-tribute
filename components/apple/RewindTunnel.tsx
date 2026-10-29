@@ -85,7 +85,7 @@ export default function RewindTunnel({ durationMs, onDone }: { durationMs: numbe
   const [flash, setFlash] = useState(false);
   const yearRef = useRef<HTMLSpanElement>(null);
   const barRef = useRef<HTMLSpanElement>(null);
-  const flyMs = durationMs - 700;
+  const flyMs = durationMs - 200; // the last bit: a fade to black, then straight to the landing page
   const travel = LENGTH + 250;
 
   const screens = useMemo<Screen[]>(() => {
@@ -129,7 +129,7 @@ export default function RewindTunnel({ durationMs, onDone }: { durationMs: numbe
       );
     });
     timers.push(setTimeout(() => setAtLight(true), timeForDepth(0.95) * flyMs));
-    timers.push(setTimeout(() => setFlash(true), flyMs - 250));
+    timers.push(setTimeout(() => setFlash(true), flyMs - 500)); // fade to black as you reach the light
     timers.push(setTimeout(onDone, durationMs));
 
     // year counter + progress line, straight into the DOM (no re-renders)
@@ -184,9 +184,7 @@ export default function RewindTunnel({ durationMs, onDone }: { durationMs: numbe
           ))}
 
           {/* the light at the end: where it all started */}
-          <div className={styles.end} style={{ transform: `translate3d(0, 0, ${-(LENGTH + 450)}px)` }}>
-            <span>www</span>
-          </div>
+          <div className={styles.end} style={{ transform: `translate3d(0, 0, ${-(LENGTH + 450)}px)` }} />
         </div>
       </div>
 

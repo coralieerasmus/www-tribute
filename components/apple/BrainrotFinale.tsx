@@ -18,14 +18,15 @@ import styles from "./finale.module.css";
  *  3. zoom   – the camera pulls back: the phone becomes one screen in an endless wall of screens
  *  4. wall   – you look at the wall while the camera slowly keeps drifting back;
  *              the sound of every video joins in, one by one, until it's a wall of noise
- *  5. glitch – the signal breaks down and the screen switches off
+ *  5. glitch – the signal breaks down
+ *     off    – the screen switches off like an old monitor (everything else is hidden)
  *  6. rewind – a flight back through a corridor of screens: 2026 → 2020 → 2012 → 2005 → the 90s
  *
  * With `use3D` the phone itself is the three.js model (PhoneScene, driven by the
  * parent through `onStage`). Without it, a CSS phone is used.
  */
 
-export type FinaleStage = "fade" | "solo" | "zoom" | "wall" | "glitch" | "rewind";
+export type FinaleStage = "fade" | "solo" | "zoom" | "wall" | "glitch" | "off" | "rewind";
 
 /** how long the "switching off" at the end of the glitch takes */
 const OFF_MS = 650;
@@ -119,7 +120,8 @@ export default function BrainrotFinale({
       crowd.current?.glitch();
     });
     at(rewind - OFF_MS, () => {
-      // the screen switches off: silence
+      // the screen switches off: silence, and the phone + wall disappear
+      go("off");
       crowd.current?.stop();
       playPowerOff();
       setTilesMounted(false);
@@ -186,7 +188,7 @@ export default function BrainrotFinale({
         </div>
 
         {/* the CSS phone (fallback when the 3D phone isn't available) */}
-        {!use3D && stage !== "rewind" && (
+        {!use3D && stage !== "rewind" && stage !== "off" && (
           <div
             className={styles.phoneWrap}
             style={{
@@ -209,7 +211,7 @@ export default function BrainrotFinale({
       </div>
 
       {/* outside the root, so it also sits on top of the 3D phone */}
-      {stage === "glitch" && <ScreenGlitch durationMs={TIMINGS.finaleGlitchMs} offMs={OFF_MS} />}
+      {(stage === "glitch" || stage === "off") && <ScreenGlitch durationMs={TIMINGS.finaleGlitchMs} offMs={OFF_MS} />}
     </>
   );
 }
